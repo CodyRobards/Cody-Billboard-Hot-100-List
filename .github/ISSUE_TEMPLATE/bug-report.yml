@@ -1,0 +1,77 @@
+name: "Bug Report"
+description: "Report a reproducible issue with the Astro app or content pipeline."
+title: "bug: <summary>"
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping us keep the archive fast and reliable! Fill out the details below so we can triage quickly.
+  - type: input
+    id: summary
+    attributes:
+      label: Summary
+      description: A concise description of the bug.
+      placeholder: "Page crashes when navigating to /1970s"
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: Provide a step-by-step walkthrough to trigger the bug.
+      placeholder: |
+        1. Go to ...
+        2. Click ...
+        3. Observe ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What should happen when the bug is fixed?
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behavior
+      description: What actually happens now?
+    validations:
+      required: true
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Affected Area
+      description: Which part of the project is impacted?
+      options:
+        - Astro app (layouts, pages, islands)
+        - Content pipeline (collections, markdown)
+        - Build tooling / CI
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: performance
+    attributes:
+      label: Performance Impact
+      description: Describe any effect on LCP, CLS, INP, or other measurable metrics. Include data if available.
+      placeholder: "CLS jumps to 0.12 on decade page when hero image loads"
+  - type: input
+    id: regression
+    attributes:
+      label: Regression?
+      description: If yes, note the last known good commit or release.
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Browser, device, OS, and build info.
+      placeholder: "Chrome 123 on macOS 14, npm run preview"
+  - type: textarea
+    id: notes
+    attributes:
+      label: Additional Notes / Screenshots
+      description: Attach logs, HAR files, or screenshots.

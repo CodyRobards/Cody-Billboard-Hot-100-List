@@ -1,0 +1,15 @@
+# CODEOWNERS ensure reviews from the right maintainers.
+# Astro application structure
+/src/ @CodyBillboard/astro-app-maintainers
+/astro.config.mjs @CodyBillboard/astro-app-maintainers
+/package.json @CodyBillboard/astro-app-maintainers
+/package-lock.json @CodyBillboard/astro-app-maintainers
+
+# Content sources
+/content/ @CodyBillboard/content-stewards
+/src/content/ @CodyBillboard/content-stewards
+/public/ @CodyBillboard/content-stewards
+
+# Governance docs
+/.github/ @CodyBillboard/astro-app-maintainers
+/CONTRIBUTING.md @CodyBillboard/astro-app-maintainers

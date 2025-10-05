@@ -1,0 +1,66 @@
+name: "Feature Request"
+description: "Propose a new idea or enhancement for the archive."
+title: "feat: <summary>"
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Have an idea to level up the archive? Share the context and performance implications below.
+  - type: input
+    id: summary
+    attributes:
+      label: Summary
+      description: One sentence description of the proposed feature.
+      placeholder: "Add decade-level overview cards"
+    validations:
+      required: true
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Motivation
+      description: What user problem does this solve?
+      placeholder: "Researchers need a quick read on how the decade evolved"
+    validations:
+      required: true
+  - type: textarea
+    id: details
+    attributes:
+      label: Proposed Solution
+      description: Outline the implementation approach, data sources, or components involved.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance Criteria
+      description: List the measurable outcomes or completion definition.
+      placeholder: |
+        - [ ] Overview card appears on decade pages
+        - [ ] Content editors can configure summaries via frontmatter
+    validations:
+      required: true
+  - type: textarea
+    id: performance
+    attributes:
+      label: Performance Impact
+      description: Explain how this affects LCP, CLS, INP, bundle size, or caching. Include mitigations for any regressions.
+      placeholder: "Adds 6kb of CSS but defers JS; expect no change to INP"
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Other approaches you evaluated and why they were rejected.
+  - type: input
+    id: dependencies
+    attributes:
+      label: Dependencies
+      description: Linked issues, APIs, or datasets required for the feature.
+  - type: textarea
+    id: rollout
+    attributes:
+      label: Rollout / Validation Plan
+      description: Describe how we should validate the feature and monitor performance post-launch.
