@@ -1,6 +1,10 @@
 {
   "extends": "astro/tsconfigs/strict",
   "compilerOptions": {
-    "baseUrl": "."
-  }
+    "baseUrl": ".",
+    "moduleResolution": "bundler",
+    "types": ["@astrojs/check"]
+  },
+  "include": ["src", "astro.config.mjs", "src/env.d.ts"],
+  "exclude": ["dist"]
 }
