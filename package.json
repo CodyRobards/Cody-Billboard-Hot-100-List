@@ -17,6 +17,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@astrojs/critters": "npm:astro-critters@^2.2.1",
     "astro": "^5.14.1"
   },
   "devDependencies": {
