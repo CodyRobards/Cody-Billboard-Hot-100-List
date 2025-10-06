@@ -53,6 +53,8 @@ const formatDate = (
 
 const toHref = (segment: string, slug: string) => `/${segment}/${slug}/`;
 const tags = entry.data.tags ?? [];
+const numberOnes = entry.data.numberOnes ?? [];
+const overallRanking = entry.data.overallRanking ?? [];
 const summaryParagraphs = entry.data.yearSummary
   ? entry.data.yearSummary
       .split(/\n{2,}/)
@@ -92,20 +94,20 @@ const summaryParagraphs = entry.data.yearSummary
       {summaryParagraphs.map((paragraph) => <p>{paragraph}</p>)}
       <Content />
       {
-        entry.data.numberOnes.length ? (
+        numberOnes.length ? (
           <NumberOnesList
             heading="Weekly number ones"
-            description={`All ${entry.data.numberOnes.length} Hot 100 chart-toppers from ${entry.data.year}.`}
-            items={entry.data.numberOnes}
+            description={`All ${numberOnes.length} Hot 100 chart-toppers from ${entry.data.year}.`}
+            items={numberOnes}
           />
         ) : null
       }
       {
-        entry.data.overallRanking.length ? (
+        overallRanking.length ? (
           <OverallRankingList
             heading="Year-end favorites"
-            description={`Personal ranking of ${entry.data.overallRanking.length} number ones from ${entry.data.year}.`}
-            items={entry.data.overallRanking}
+            description={`Personal ranking of ${overallRanking.length} number ones from ${entry.data.year}.`}
+            items={overallRanking}
           />
         ) : null
       }
