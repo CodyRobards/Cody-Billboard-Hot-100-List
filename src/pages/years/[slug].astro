@@ -2,6 +2,8 @@
 import SiteLayout from "../../layouts/SiteLayout.astro";
 import ResponsiveImage from "../../components/ResponsiveImage.astro";
 import { getCollection } from "astro:content";
+import NumberOnesList from "../../components/NumberOnesList.astro";
+import OverallRankingList from "../../components/OverallRankingList.astro";
 import { getDecadeGroups, getYearGroups } from "../../lib/content-utils";
 
 export async function getStaticPaths() {
@@ -51,6 +53,12 @@ const formatDate = (
 
 const toHref = (segment: string, slug: string) => `/${segment}/${slug}/`;
 const tags = entry.data.tags ?? [];
+const summaryParagraphs = entry.data.yearSummary
+  ? entry.data.yearSummary
+      .split(/\n{2,}/)
+      .map((paragraph) => paragraph.trim())
+      .filter(Boolean)
+  : [];
 ---
 
 <SiteLayout pageTitle={entry.data.title} description={entry.data.commentary_excerpt}>
@@ -81,7 +89,26 @@ const tags = entry.data.tags ?? [];
     </header>
     <div class="article__body">
       <p>{entry.data.commentary}</p>
+      {summaryParagraphs.map((paragraph) => <p>{paragraph}</p>)}
       <Content />
+      {
+        entry.data.numberOnes.length ? (
+          <NumberOnesList
+            heading="Weekly number ones"
+            description={`All ${entry.data.numberOnes.length} Hot 100 chart-toppers from ${entry.data.year}.`}
+            items={entry.data.numberOnes}
+          />
+        ) : null
+      }
+      {
+        entry.data.overallRanking.length ? (
+          <OverallRankingList
+            heading="Year-end favorites"
+            description={`Personal ranking of ${entry.data.overallRanking.length} number ones from ${entry.data.year}.`}
+            items={entry.data.overallRanking}
+          />
+        ) : null
+      }
     </div>
     {
       tags.length ? (

@@ -1,6 +1,7 @@
 ---
 import SiteLayout from "../../layouts/SiteLayout.astro";
 import ResponsiveImage from "../../components/ResponsiveImage.astro";
+import RankingEntriesTable from "../../components/RankingEntriesTable.astro";
 import { getCollection } from "astro:content";
 import { getRankingHighlights } from "../../lib/ranking-highlights";
 import sortableTableScriptHref from "../../scripts/sortable-table.ts?url";
@@ -25,7 +26,8 @@ if (!entry) {
 }
 
 const { Content } = await entry.render();
-const highlights = getRankingHighlights(entry.slug);
+const entries = entry.data.entries ?? [];
+const highlights = getRankingHighlights(entry.slug, entries);
 const rankingEntries = await getCollection("rankings");
 
 const year = entry.data.chart_week.getFullYear();
@@ -51,6 +53,19 @@ const formatDate = (
 
 const toHref = (slug: string) => `/rankings/${slug}/`;
 const tags = entry.data.tags ?? [];
+const subsetDescription =
+  entry.data.subset === "top-220"
+    ? "Complete Top 220 countdown derived from the research archive."
+    : entry.data.subset === "bottom-60"
+      ? "Bottom 60 selections capturing the tail end of the countdown."
+      : undefined;
+
+const tableHeading =
+  entry.data.subset === "top-220"
+    ? "Top 220 countdown"
+    : entry.data.subset === "bottom-60"
+      ? "Bottom 60 countdown"
+      : "Full listing";
 ---
 
 <SiteLayout pageTitle={entry.data.title} description={entry.data.commentary_excerpt}>
@@ -82,6 +97,11 @@ const tags = entry.data.tags ?? [];
     <div class="article__body">
       <p>{entry.data.commentary}</p>
       <Content />
+      <RankingEntriesTable
+        heading={tableHeading}
+        description={subsetDescription}
+        entries={entries}
+      />
     </div>
     {
       tags.length ? (

@@ -65,6 +65,22 @@ const mockYears = [
     commentary_excerpt: '1999 ruled by crossovers.',
     commentary: 'Details about 1999.',
     year: 1999,
+    numberOnes: [
+      {
+        position: 1,
+        title: 'Smooth',
+        artist: 'Santana ft. Rob Thomas',
+        notes: ['Dominated radio rotation.'],
+      },
+    ],
+    overallRanking: [
+      {
+        position: 1,
+        title: 'Smooth',
+        artist: 'Santana ft. Rob Thomas',
+      },
+    ],
+    yearSummary: '1999 blended Latin rock and teen pop for historic runs.',
   }),
   createEntry('years', '1999-pop-surges', {
     title: '1999 Pop Surges',
@@ -75,6 +91,21 @@ const mockYears = [
     commentary_excerpt: 'Pop surge continues.',
     commentary: 'More 1999 details.',
     year: 1999,
+    numberOnes: [
+      {
+        position: 1,
+        title: 'Genie in a Bottle',
+        artist: 'Christina Aguilera',
+        notes: ['TRL mainstay.'],
+      },
+    ],
+    overallRanking: [
+      {
+        position: 1,
+        title: 'Genie in a Bottle',
+        artist: 'Christina Aguilera',
+      },
+    ],
   }),
   createEntry('years', '2000-new-millennium', {
     title: '2000 New Millennium',
@@ -85,6 +116,21 @@ const mockYears = [
     commentary_excerpt: 'A new era begins.',
     commentary: 'Details about 2000.',
     year: 2000,
+    numberOnes: [
+      {
+        position: 1,
+        title: 'Independent Women Part I',
+        artist: "Destiny's Child",
+        notes: ['Soundtracked action flicks.'],
+      },
+    ],
+    overallRanking: [
+      {
+        position: 1,
+        title: 'Independent Women Part I',
+        artist: "Destiny's Child",
+      },
+    ],
   }),
 ];
 
@@ -98,6 +144,14 @@ const mockRankings = [
     commentary_excerpt: 'Dominating the chart.',
     commentary: 'Smooth hits number one.',
     chart_week: new Date('1999-10-23'),
+    entries: [
+      {
+        position: 1,
+        title: 'Smooth',
+        artist: 'Santana ft. Rob Thomas',
+        commentary: 'Still at the summit.',
+      },
+    ],
   }),
   createEntry('rankings', 'genie-in-a-bottle', {
     title: 'Genie in a Bottle',
@@ -108,6 +162,14 @@ const mockRankings = [
     commentary_excerpt: 'New pop powerhouse.',
     commentary: 'Genie reaches number two.',
     chart_week: new Date('1999-07-31'),
+    entries: [
+      {
+        position: 2,
+        title: 'Genie in a Bottle',
+        artist: 'Christina Aguilera',
+        commentary: 'Climbing quickly.',
+      },
+    ],
   }),
   createEntry('rankings', 'baby-one-more-time', {
     title: '...Baby One More Time',
@@ -118,6 +180,14 @@ const mockRankings = [
     commentary_excerpt: 'Teen pop explosion.',
     commentary: 'Baby One More Time stays strong.',
     chart_week: new Date('1999-01-30'),
+    entries: [
+      {
+        position: 5,
+        title: '...Baby One More Time',
+        artist: 'Britney Spears',
+        commentary: 'Holding in the top five.',
+      },
+    ],
   }),
   createEntry('rankings', 'obscure-hit-280', {
     title: 'Obscure Hit',
@@ -128,6 +198,14 @@ const mockRankings = [
     commentary_excerpt: 'Deep in the chart.',
     commentary: 'Obscure track near the bottom.',
     chart_week: new Date('1999-12-25'),
+    entries: [
+      {
+        position: 280,
+        title: 'Obscure Hit',
+        artist: 'Unknown Artist',
+        commentary: 'Almost off the charts.',
+      },
+    ],
   }),
 ];
 
