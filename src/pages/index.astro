@@ -1,11 +1,22 @@
 ---
 /* eslint-disable astro/no-deprecated-astro-resolve */
 import "../styles/critical.css";
+import ResponsiveImage from "../components/ResponsiveImage.astro";
+
 const title = "Astro Starter";
 const resolveAsset = typeof Astro.resolve === "function" ? Astro.resolve : (path: string) => path;
 const navigationScript = resolveAsset("../scripts/prefetch-navigation.ts");
 const serviceWorkerScript = resolveAsset("../scripts/register-service-worker.ts");
 const nonCriticalStylesHref = resolveAsset("../styles/noncritical.css");
+const heroImage = {
+  src: "/images/meta/archive.jpg",
+  width: 1600,
+  height: 900,
+  alt: "Filing cabinets and vinyl sleeves representing the Hot 100 archive",
+  format: "jpg" as const,
+};
+const heroSizes = "(min-width: 72rem) 64rem, 100vw";
+const heroMime = heroImage.format === "jpg" ? "jpeg" : (heroImage.format ?? "jpeg");
 ---
 
 <!doctype html>
@@ -18,13 +29,63 @@ const nonCriticalStylesHref = resolveAsset("../styles/noncritical.css");
     <noscript>
       <link rel="stylesheet" href={nonCriticalStylesHref} />
     </noscript>
+    <link
+      rel="preload"
+      as="image"
+      href={heroImage.src}
+      imagesrcset={`${heroImage.src} ${heroImage.width}w`}
+      imagesizes={heroSizes}
+      type={`image/${heroMime}`}
+    />
   </head>
   <body>
     <main id="content-root">
-      <h1>{title}</h1>
-      <p>Get started by editing <code>src/pages/index.astro</code>.</p>
+      <section class="hero">
+        <div class="hero__media">
+          <ResponsiveImage
+            image={heroImage}
+            sizes={heroSizes}
+            class="hero__image"
+            loading="eager"
+            decoding="sync"
+          />
+        </div>
+        <div class="hero__content">
+          <h1>{title}</h1>
+          <p>
+            Get started by editing <code>src/pages/index.astro</code> and explore the chart history archive
+            imagery above.
+          </p>
+        </div>
+      </section>
     </main>
     <script type="module" defer src={navigationScript}></script>
     <script type="module" defer src={serviceWorkerScript}></script>
+    <style>
+      .hero {
+        display: grid;
+        gap: 2rem;
+        align-items: center;
+      }
+
+      @media (min-width: 48rem) {
+        .hero {
+          grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        }
+      }
+
+      .hero__image {
+        width: 100%;
+        height: auto;
+        border-radius: 0.75rem;
+        box-shadow: 0 1.5rem 3rem rgba(15, 23, 42, 0.2);
+      }
+
+      .hero__content {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+    </style>
   </body>
 </html>

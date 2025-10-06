@@ -1,5 +1,15 @@
 import { defineCollection, z } from 'astro:content';
 
+const coverImageSchema = z
+  .object({
+    src: z.string(),
+    width: z.number().int().positive(),
+    height: z.number().int().positive(),
+    alt: z.string(),
+    format: z.enum(['jpg', 'png', 'webp', 'avif']).optional(),
+  })
+  .optional();
+
 const baseTrackSchema = z.object({
   title: z.string(),
   slug: z.string(),
@@ -8,7 +18,7 @@ const baseTrackSchema = z.object({
   ranking: z.number().int().min(1),
   commentary_excerpt: z.string(),
   commentary: z.string(),
-  cover_image: z.string().optional(),
+  cover_image: coverImageSchema,
   tags: z.array(z.string()).optional(),
 });
 
