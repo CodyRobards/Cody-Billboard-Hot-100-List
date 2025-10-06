@@ -89,18 +89,15 @@ const summaryParagraphs = entry.data.yearSummary
       .map((paragraph) => paragraph.trim())
       .filter(Boolean)
   : [];
+const pageTitle = String(entry.data.year);
+const pageDescription =
+  entry.data.commentary_excerpt ?? `Highlights from the Billboard Hot 100 in ${entry.data.year}.`;
 ---
 
-<SiteLayout pageTitle={entry.data.title} description={entry.data.commentary_excerpt}>
+<SiteLayout pageTitle={pageTitle} description={pageDescription}>
   <article class="article">
     <header class="article__header">
       <h1>{entry.data.year}</h1>
-      {entry.data.title ? <p class="article__subhead">{entry.data.title}</p> : null}
-      {
-        entry.data.commentary_excerpt ? (
-          <p class="article__lede">{entry.data.commentary_excerpt}</p>
-        ) : null
-      }
       <ResponsiveImage
         image={entry.data.cover_image}
         class="article__image"
@@ -163,9 +160,7 @@ const summaryParagraphs = entry.data.yearSummary
                   </span>
                   <span class="article-pagination__meta">
                     <span class="article-pagination__label">Previous</span>
-                    <span class="article-pagination__title">
-                      {previousYear.data.year} · {previousYear.data.title}
-                    </span>
+                    <span class="article-pagination__title">{previousYear.data.year}</span>
                   </span>
                 </a>
               ) : null}
@@ -182,9 +177,7 @@ const summaryParagraphs = entry.data.yearSummary
                 <a class="article-pagination__link" href={toHref("years", nextYear.slug)}>
                   <span class="article-pagination__meta">
                     <span class="article-pagination__label">Next</span>
-                    <span class="article-pagination__title">
-                      {nextYear.data.year} · {nextYear.data.title}
-                    </span>
+                    <span class="article-pagination__title">{nextYear.data.year}</span>
                   </span>
                   <span class="article-pagination__icon" aria-hidden="true">
                     →

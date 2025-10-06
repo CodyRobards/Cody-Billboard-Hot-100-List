@@ -1,0 +1,43 @@
+---
+import SiteLayout from "../../layouts/SiteLayout.astro";
+import { getYearGroups, type YearEntry } from "../../lib/content-utils";
+
+const yearGroups = await getYearGroups();
+
+const sortedYears = Object.keys(yearGroups)
+  .map((year) => Number(year))
+  .sort((a, b) => b - a);
+
+const yearEntries: YearEntry[] = sortedYears
+  .map((year) => (yearGroups[year] ?? [])[0])
+  .filter((entry): entry is YearEntry => Boolean(entry));
+
+const toHref = (slug: string) => `/years/${slug}/`;
+---
+
+<SiteLayout
+  pageTitle="Yearly recaps"
+  description="Browse every Billboard Hot 100 recap in chronological order."
+>
+  <article class="section" aria-labelledby="year-index-heading">
+    <header class="section__header">
+      <h1 class="section__title" id="year-index-heading">Browse all years</h1>
+      <p class="section__lead">
+        Jump to any Billboard Hot 100 recap to explore weekly number ones and personal year-end
+        favorites.
+      </p>
+    </header>
+    <div class="record-grid">
+      {
+        yearEntries.map((entry) => (
+          <article class="record-card">
+            <h2 class="record-card__title">
+              <a href={toHref(entry.slug)}>{entry.data.title}</a>
+            </h2>
+            <p class="record-card__excerpt">{entry.data.commentary_excerpt}</p>
+          </article>
+        ))
+      }
+    </div>
+  </article>
+</SiteLayout>

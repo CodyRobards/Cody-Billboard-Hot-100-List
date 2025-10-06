@@ -31,11 +31,6 @@ const latestYearEntry = sortedYears
 const aboutEntry =
   metaEntries.find((entry) => entry.slug === "about-the-archive") ?? metaEntries[0];
 
-const formatDate = (
-  date: Date,
-  options: Intl.DateTimeFormatOptions = { month: "short", year: "numeric" }
-) => new Intl.DateTimeFormat("en", options).format(date);
-
 const toHref = (segment: string, slug: string) => `/${segment}/${slug}/`;
 ---
 
@@ -86,11 +81,6 @@ const toHref = (segment: string, slug: string) => `/${segment}/${slug}/`;
               <a href={toHref("years", entry.slug)}>{entry.data.title}</a>
             </h3>
             <p class="record-card__excerpt">{entry.data.commentary_excerpt}</p>
-            <div class="record-card__meta">
-              <span>#{entry.data.ranking}</span>
-              <span>{entry.data.year}</span>
-              <span>{formatDate(entry.data.release_date)}</span>
-            </div>
           </article>
         ))
       }

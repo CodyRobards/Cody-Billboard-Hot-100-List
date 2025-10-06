@@ -23,7 +23,6 @@ const baseTrackSchema = z.object({
 });
 
 const numberOneEntrySchema = z.object({
-  position: z.number().int().min(1),
   title: z.string(),
   artist: z.string(),
   notes: z.array(z.string()).default([]),
