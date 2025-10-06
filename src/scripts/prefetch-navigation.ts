@@ -29,6 +29,7 @@
   if (!contentRoot) {
     return;
   }
+  const contentRootEl: HTMLElement = contentRoot;
 
   interface PageEntry {
     html: string;
@@ -40,7 +41,7 @@
   let currentUrl = window.location.href;
 
   cache.set(currentUrl, {
-    html: contentRoot.innerHTML,
+    html: contentRootEl.innerHTML,
     title: document.title,
   });
 
@@ -66,16 +67,20 @@
     while (el && !(el instanceof HTMLAnchorElement)) {
       el = el.parentElement;
     }
-    if (!el || !el.href) {
+    if (!el || !(el instanceof HTMLAnchorElement)) {
       return null;
     }
-    if (el.target && el.target !== '_self') {
+    const anchor = el;
+    if (!anchor.href) {
       return null;
     }
-    if (el.hasAttribute('download') || el.getAttribute('rel') === 'external') {
+    if (anchor.target && anchor.target !== '_self') {
       return null;
     }
-    return el;
+    if (anchor.hasAttribute('download') || anchor.getAttribute('rel') === 'external') {
+      return null;
+    }
+    return anchor;
   }
 
   async function fetchAndCache(url: URL): Promise<PageEntry> {
@@ -116,13 +121,13 @@
   }
 
   function focusMain() {
-    contentRoot.setAttribute('tabindex', '-1');
-    contentRoot.focus({ preventScroll: true });
-    contentRoot.removeAttribute('tabindex');
+    contentRootEl.setAttribute('tabindex', '-1');
+    contentRootEl.focus({ preventScroll: true });
+    contentRootEl.removeAttribute('tabindex');
   }
 
   function swapContent(entry: PageEntry) {
-    contentRoot.innerHTML = entry.html;
+    contentRootEl.innerHTML = entry.html;
     document.title = entry.title;
   }
 
@@ -136,7 +141,7 @@
 
   async function render(url: URL, entry: PageEntry, pushState: boolean, scrollY: number) {
     cache.set(currentUrl, {
-      html: contentRoot.innerHTML,
+      html: contentRootEl.innerHTML,
       title: document.title,
     });
 
