@@ -1,5 +1,5 @@
 {
-  "extends": "astro/tsconfigs/strict.json",
+  "extends": "./node_modules/astro/tsconfigs/strict.json",
   "compilerOptions": {
     "baseUrl": ".",
     "module": "esnext",

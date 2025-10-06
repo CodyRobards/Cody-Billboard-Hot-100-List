@@ -1,5 +1,5 @@
 ---
-import { Image } from "@astrojs/image/components";
+import { Image } from "astro:assets";
 
 interface CoverImage {
   src: string;
@@ -36,7 +36,7 @@ const {
       class={className}
       loading={loading}
       decoding={decoding}
-      format={["avif", "webp", "jpeg"]}
+      format={image.format}
       sizes={sizes}
     />
   ) : (
