@@ -1,5 +1,5 @@
 ---
-import { Picture } from "astro:assets";
+import { Image } from "@astrojs/image/components";
 
 interface CoverImage {
   src: string;
@@ -24,47 +24,20 @@ const {
   loading = "lazy",
   decoding = "async",
 } = Astro.props as Props;
-
-const imageSrc = image
-  ? image.src.startsWith("/")
-    ? new URL(`../../public${image.src}`, import.meta.url)
-    : image.src
-  : undefined;
-
-const widths = image
-  ? Array.from(new Set([320, 480, 640, 768, 1024, 1280, image.width]))
-      .filter((width) => width <= image.width)
-      .sort((a, b) => a - b)
-  : undefined;
-
-let fallbackFormat: "jpeg" | "png" | "webp" | "avif" | undefined = undefined;
-if (image?.format) {
-  if (image.format === "jpg") {
-    fallbackFormat = "jpeg";
-  } else if (image.format === "avif" || image.format === "webp") {
-    fallbackFormat = "jpeg";
-  } else {
-    fallbackFormat = image.format;
-  }
-} else {
-  fallbackFormat = "jpeg";
-}
 ---
 
 {
   image ? (
-    <Picture
-      src={imageSrc}
+    <Image
+      src={image.src}
       alt={image.alt}
       width={image.width}
       height={image.height}
-      widths={widths}
-      sizes={sizes}
-      formats={["avif", "webp"]}
-      fallbackFormat={fallbackFormat}
       class={className}
       loading={loading}
       decoding={decoding}
+      format={["avif", "webp", "jpeg"]}
+      sizes={sizes}
     />
   ) : (
     <slot name="fallback" />
