@@ -23,7 +23,7 @@ const { heading, description, items } = Astro.props as Props;
         <ul class="number-one-list__item">
           <div class="number-one-list__track">
             <span class="number-one-list__title">
-              "{entry.title}"<span class="number-one-list__artist">by {entry.artist}</span>
+              "{entry.title}"<span class="number-one-list__artist"> by {entry.artist}</span>
             </span>
           </div>
           {entry.notes && entry.notes.length ? (
