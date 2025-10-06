@@ -1,16 +1,16 @@
 ---
 import SiteLayout from "../layouts/SiteLayout.astro";
-import ResponsiveImage from "../components/ResponsiveImage.astro";
+// import ResponsiveImage from "../components/ResponsiveImage.astro";
 import { getYearGroups } from "../lib/content-utils";
 import { getCollection } from "astro:content";
 
-const heroImage = {
-  src: "/images/meta/archive.jpg",
-  width: 1600,
-  height: 900,
-  alt: "Rows of catalog drawers and vinyl sleeves representing the Hot 100 archive",
-  format: "jpg" as const,
-};
+// const heroImage = {
+//   src: "/images/meta/archive.jpg",
+//   width: 1600,
+//   height: 900,
+//   alt: "Rows of catalog drawers and vinyl sleeves representing the Hot 100 archive",
+//   format: "jpg" as const,
+// };
 
 const [yearGroups, metaEntries] = await Promise.all([getYearGroups(), getCollection("meta")]);
 
@@ -57,18 +57,18 @@ const toHref = (segment: string, slug: string) => `/${segment}/${slug}/`;
         <a class="hero__action hero__action--secondary" href="/years/">Browse all years</a>
       </div>
     </div>
-    <figure class="hero__media">
+    <!-- <figure class="hero__media">
       <ResponsiveImage
         image={heroImage}
         sizes="(min-width: 70rem) 28rem, 100vw"
         class="hero__image"
       />
-    </figure>
+    </figure> -->
   </article>
 
   <section class="section" aria-labelledby="year-section">
     <header class="section__header">
-      <h2 class="section__title" id="year-section">Yearly recaps</h2>
+      <h2 class="section__title" id="year-section">Yearly Rankings</h2>
       <p class="section__lead">
         Finer-grain stories for seasons of the charts, featuring pivotal releases and crossovers.
       </p>
@@ -103,7 +103,7 @@ const toHref = (segment: string, slug: string) => `/${segment}/${slug}/`;
         </section>
         <section class="sidebar-panel" aria-labelledby="sidebar-updates" slot="sidebar">
           <h2 class="sidebar-panel__title" id="sidebar-updates">
-            Recent yearly recaps
+            Recent yearly rankings
           </h2>
           <ul class="sidebar-panel__list">
             {sortedYears.slice(0, 8).map((year) => {

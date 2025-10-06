@@ -14,19 +14,17 @@ interface Props {
 const { heading, description, items } = Astro.props as Props;
 ---
 
-<section class="article__table" aria-labelledby={heading.replace(/\s+/g, "-").toLowerCase()}>
-  <h2 class="section__title" id={heading.replace(/\s+/g, "-").toLowerCase()}>{heading}</h2>
+<section class="article__table" aria-labelledby={heading}>
+  <u><h2 class="section__title" id={heading}>{heading}</h2></u>
   {description ? <p class="section__lead">{description}</p> : null}
   <ol class="number-one-list">
     {
-      items.map((entry, index) => (
-        <li class="number-one-list__item">
-          <div class="number-one-list__header">
-            <span class="number-one-list__position">#{index + 1}</span>
-            <div class="number-one-list__track">
-              <span class="number-one-list__title">{entry.title}</span>
-              <span class="number-one-list__artist">{entry.artist}</span>
-            </div>
+      items.map((entry) => (
+        <ul class="number-one-list__item">
+          <div class="number-one-list__track">
+            <span class="number-one-list__title">
+              "{entry.title}"<span class="number-one-list__artist">by {entry.artist}</span>
+            </span>
           </div>
           {entry.notes && entry.notes.length ? (
             <ul class="number-one-list__notes">
@@ -35,13 +33,17 @@ const { heading, description, items } = Astro.props as Props;
               ))}
             </ul>
           ) : null}
-        </li>
+        </ul>
       ))
     }
   </ol>
 </section>
 
 <style>
+  .section {
+    padding: 20px;
+  }
+
   .number-one-list {
     display: grid;
     gap: 1.25rem;
@@ -58,7 +60,6 @@ const { heading, description, items } = Astro.props as Props;
   .number-one-list__header {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.75rem 1.5rem;
     align-items: baseline;
   }
 
@@ -77,19 +78,22 @@ const { heading, description, items } = Astro.props as Props;
 
   .number-one-list__title {
     font-weight: 600;
-    font-size: 1.05rem;
+    font-size: 1.2rem;
+    color: var(--color-text, #000);
   }
 
   .number-one-list__artist {
-    font-size: 0.95rem;
-    color: var(--color-text-muted, rgba(0, 0, 0, 0.65));
+    font-weight: 400;
+    font-size: 1.1rem;
+    color: var(--color-text-muted, rgba(0, 0, 0, 0.6));
   }
 
   .number-one-list__notes {
+    font-size: 0.95rem;
     margin: 0.75rem 0 0 0;
     padding: 0 0 0 1.25rem;
     display: grid;
-    gap: 0.5rem;
+    gap: 0.6rem;
     color: var(--color-text-muted, rgba(0, 0, 0, 0.75));
   }
 
@@ -103,7 +107,7 @@ const { heading, description, items } = Astro.props as Props;
     }
 
     .number-one-list__title {
-      font-size: 1.15rem;
+      font-size: 1.5rem;
     }
   }
 </style>

@@ -15,7 +15,7 @@ const { heading, description, items } = Astro.props as Props;
 ---
 
 <section class="article__table" aria-labelledby={heading.replace(/\s+/g, "-").toLowerCase()}>
-  <h2 class="section__title" id={heading.replace(/\s+/g, "-").toLowerCase()}>{heading}</h2>
+  <u><h2 class="section__title" id={heading.replace(/\s+/g, "-").toLowerCase()}>{heading}</h2></u>
   {description ? <p class="section__lead">{description}</p> : null}
   <ol class="overall-ranking-list">
     {
@@ -33,9 +33,12 @@ const { heading, description, items } = Astro.props as Props;
 </section>
 
 <style>
+  .section__lead {
+    border-bottom: 1px solid var(--color-border, rgba(0, 0, 0, 0.08));
+  }
   .overall-ranking-list {
     display: grid;
-    gap: 0.75rem;
+    gap: 0.25rem;
     padding: 0;
     margin: 0;
     list-style: none;
@@ -44,10 +47,10 @@ const { heading, description, items } = Astro.props as Props;
   .overall-ranking-list__item {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.75rem 1.5rem;
+    gap: 0.75rem;
     align-items: baseline;
     padding-bottom: 0.5rem;
-    border-bottom: 1px dashed var(--color-border, rgba(0, 0, 0, 0.08));
+    border-bottom: 1px solid var(--color-border, rgba(0, 0, 0, 0.08));
   }
 
   .overall-ranking-list__position {
@@ -59,7 +62,6 @@ const { heading, description, items } = Astro.props as Props;
   .overall-ranking-list__track {
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
   }
 
   .overall-ranking-list__title {

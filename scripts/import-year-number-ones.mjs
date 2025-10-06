@@ -245,7 +245,7 @@ const buildFrontmatter = (block) => {
 
 const buildMdx = (frontmatter) => {
   const yaml = stringify(frontmatter, { lineWidth: 0 });
-  return `---\n${yaml}---\n\nThis entry was generated from docs/hot100_#1s.txt.\n`;
+  return `---\n${yaml}---\n`;
 };
 
 const main = async () => {

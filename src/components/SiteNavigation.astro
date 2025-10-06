@@ -10,7 +10,7 @@ const { years, currentPath } = Astro.props as Props;
 
 const yearKeys = Object.keys(years)
   .map((key) => Number(key))
-  .sort((a, b) => b - a);
+  .sort((a, b) => a - b);
 
 const ensureTrailingSlash = (href: string) => (href.endsWith("/") ? href : `${href}/`);
 
@@ -34,15 +34,16 @@ const isActive = (href: string) => {
     </a>
   </div>
   <div class="site-nav__section" aria-label="Years">
-    <h2 class="site-nav__heading">Yearly recaps</h2>
+    <h2 class="site-nav__heading">Yearly rankings</h2>
     <ul class="site-nav__year-list">
       {
         yearKeys.map((year) => {
           const [primaryEntry] = years[year] ?? [];
           if (!primaryEntry) return null;
           const href = ensureTrailingSlash(`/years/${primaryEntry.slug}`);
+
           return (
-            <li class="site-nav__year-item">
+            <li class={`site-nav__year-item ${isActive(href) ? "is-current" : ""}`}>
               <a
                 class="site-nav__year-link"
                 href={href}

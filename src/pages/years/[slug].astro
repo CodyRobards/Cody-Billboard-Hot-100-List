@@ -37,16 +37,6 @@ const createSeededRandom = (seed: number) => {
   };
 };
 
-function shuffle<T>(items: readonly T[], seed: number) {
-  const random = createSeededRandom(seed);
-  const result = [...items];
-  for (let i = result.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(random() * (i + 1));
-    [result[i], result[j]] = [result[j], result[i]];
-  }
-  return result;
-}
-
 const { Content } = await entry.render();
 const yearGroups = await getYearGroups();
 const decadeStart = Math.floor(entry.data.year / 10) * 10;
@@ -74,12 +64,9 @@ const randomYear = randomYearOptions.length
   ? randomYearOptions[Math.floor(random() * randomYearOptions.length)]
   : null;
 
-const siblingYears = shuffle(
-  allYearEntries.filter(
-    (item) => Math.floor(item.data.year / 10) * 10 === decadeStart && item.slug !== entry.slug
-  ),
-  entry.data.year
-).slice(0, 4);
+const siblingYears = allYearEntries
+  .filter((item) => Math.floor(item.data.year / 10) * 10 === decadeStart)
+  .sort((a, b) => a.data.year - b.data.year);
 
 const toHref = (segment: string, slug: string) => `/${segment}/${slug}/`;
 const tags = entry.data.tags ?? [];
@@ -111,30 +98,14 @@ const pageDescription =
       {
         numberOnes.length ? (
           <>
-            <p>
-              Revisit the {numberOnes.length} Hot 100 number ones that defined {entry.data.year},
-              complete with weekly notes on the wildest chart runs.
-            </p>
-            <NumberOnesList
-              heading="Weekly number ones"
-              description={`All ${numberOnes.length} Hot 100 chart-toppers from ${entry.data.year}.`}
-              items={numberOnes}
-            />
+            <NumberOnesList heading="WEEKLY NUMBER ONES" items={numberOnes} />
           </>
         ) : null
       }
       {
         overallRanking.length ? (
           <>
-            <p>
-              When the year wrapped, these final rankings captured the songs that stuck with me
-              most.
-            </p>
-            <OverallRankingList
-              heading="Year-end favorites"
-              description={`Personal ranking of ${overallRanking.length} number ones from ${entry.data.year}.`}
-              items={overallRanking}
-            />
+            <OverallRankingList heading="OVERALL RANKINGS" items={overallRanking} />
           </>
         ) : null
       }
@@ -199,9 +170,12 @@ const pageDescription =
         </h2>
         <ul class="sidebar-panel__list">
           {siblingYears.map((item) => (
-            <li class="sidebar-panel__item">
-              <a href={toHref("years", item.slug)}>
-                {item.data.year} · {item.data.title}
+            <li class={`sidebar-panel__item ${item.slug === entry.slug ? "is-current" : ""}`}>
+              <a
+                href={toHref("years", item.slug)}
+                aria-current={item.slug === entry.slug ? "page" : undefined}
+              >
+                {item.data.year}
               </a>
             </li>
           ))}

@@ -137,6 +137,9 @@ body {
   align-self: start;
   max-width: 20rem;
   width: min(100%, 20rem);
+  max-height: calc(100vh - clamp(2rem, 4vw, 3rem));
+  overflow-y: auto;
+  scrollbar-gutter: stable;
 }
 
 .page-layout__main {
@@ -217,17 +220,14 @@ body {
   margin: 0 0 0.35rem;
 }
 
-.site-nav__year-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-}
-
 .site-nav__year-item {
   margin: 0;
+}
+
+.site-nav__year-item.is-current .site-nav__year-link {
+  font-weight: 700;
+  color: var(--color-accent, #8a2be2);
+  text-decoration: underline;
 }
 
 .site-nav__year-link {
@@ -438,6 +438,19 @@ a:focus-visible {
 .sidebar-panel__item a:hover,
 .sidebar-panel__item a:focus-visible {
   color: var(--color-accent);
+}
+
+.sidebar-panel__item.is-current a,
+.sidebar-panel__item a[aria-current='page'] {
+  font-weight: 700;
+  color: var(--color-accent);
+  text-decoration: underline;
+}
+
+.sidebar-panel__item.is-current {
+  background: rgba(154, 52, 18, 0.08); /* warm tint that matches your accent */
+  border-radius: 6px;
+  padding: 0.25rem 0.5rem;
 }
 
 .article {
@@ -665,7 +678,7 @@ a:focus-visible {
   font-size: 0.85em;
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 1600px) {
   .page-layout {
     grid-template-columns: minmax(15rem, 0.95fr) minmax(0, 2.05fr);
   }
@@ -695,6 +708,18 @@ a:focus-visible {
 
   .page-layout__nav {
     position: static;
+  }
+}
+
+@media (max-width: 1024px) {
+  .site-nav__year-list {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .site-nav__year-list {
+    grid-template-columns: 1fr;
   }
 }
 
