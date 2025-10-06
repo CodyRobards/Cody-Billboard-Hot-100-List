@@ -58,3 +58,9 @@ performs well on mid-tier mobile devices as well as desktop browsers.
   code owners listed in [`.github/CODEOWNERS`](.github/CODEOWNERS).
 - Ensure CI passes locally (`npm run lint`, `npm run build`) before opening a pull request.
 - Adhere to Conventional Commits for commit messages (e.g., `feat: add track spotlight`).
+
+## Deployment Guidance
+- After shipping any changes that impact cached HTML shells or static assets, bump the `HTML_CACHE` and `STATIC_CACHE`
+  version strings in `public/sw.js` (for example from `html-v1` to `html-v2`). Deploying with updated identifiers ensures
+  the previous caches are purged during the `activate` step so that clients receive the latest markup and assets on their
+  next visit.

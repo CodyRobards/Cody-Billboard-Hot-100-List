@@ -21,5 +21,6 @@ const scriptSrc = resolvedScript ?? "../scripts/prefetch-navigation.ts";
       <p>Get started by editing <code>src/pages/index.astro</code>.</p>
     </main>
     <script type="module" src={scriptSrc}></script>
+    <script type="module" src={Astro.resolve("../scripts/register-service-worker.ts")}></script>
   </body>
 </html>
