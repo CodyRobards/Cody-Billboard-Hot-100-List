@@ -12,7 +12,7 @@ const coverImageSchema = z
 
 const baseTrackSchema = z.object({
   title: z.string(),
-  slug: z.string(),
+  slug: z.string().optional(),
   release_date: z.coerce.date(),
   artist: z.string(),
   ranking: z.number().int().min(1),

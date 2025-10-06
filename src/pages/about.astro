@@ -1,0 +1,81 @@
+---
+import SiteLayout from "../layouts/SiteLayout.astro";
+import ResponsiveImage from "../components/ResponsiveImage.astro";
+import { getCollection } from "astro:content";
+import { getDecadeGroups, getYearGroups } from "../lib/content-utils";
+
+const [aboutEntry] = await getCollection("meta", ({ slug }) => slug === "about-the-archive");
+const entry = aboutEntry ?? (await getCollection("meta"))[0];
+
+if (!entry) {
+  throw new Error("Missing about entry");
+}
+
+const { Content } = await entry.render();
+const tags = entry.data.tags ?? [];
+
+const decadeGroups = await getDecadeGroups();
+const primaryDecade = decadeGroups["1980s"]?.[0];
+const yearGroups = await getYearGroups();
+const sampleYear = yearGroups[1984]?.[0];
+const sampleRanking = (await getCollection("rankings")).sort(
+  (a, b) => a.data.ranking - b.data.ranking
+)[0];
+
+const toHref = (segment: string, slug: string) => `/${segment}/${slug}/`;
+---
+
+<SiteLayout pageTitle={entry.data.title} description={entry.data.commentary_excerpt}>
+  <article class="article">
+    <header class="article__header">
+      <p class="article__kicker">Project overview</p>
+      <h1>{entry.data.title}</h1>
+      <p class="article__lede">{entry.data.commentary_excerpt}</p>
+      <ResponsiveImage
+        image={entry.data.cover_image}
+        class="article__image"
+        sizes="(min-width: 72rem) 32rem, 100vw"
+      />
+    </header>
+    <div class="article__body">
+      <p>{entry.data.commentary}</p>
+      <Content />
+    </div>
+    {
+      tags.length ? (
+        <div class="article__tags">
+          {tags.map((tag) => (
+            <span class="tag-chip">{tag}</span>
+          ))}
+        </div>
+      ) : null
+    }
+  </article>
+
+  <section class="sidebar-panel" aria-labelledby="about-navigation" slot="sidebar">
+    <h2 class="sidebar-panel__title" id="about-navigation">Quick entry points</h2>
+    <ul class="sidebar-panel__list">
+      {
+        primaryDecade ? (
+          <li class="sidebar-panel__item">
+            <a href={toHref("decades", primaryDecade.slug)}>{primaryDecade.data.title}</a>
+          </li>
+        ) : null
+      }
+      {
+        sampleYear ? (
+          <li class="sidebar-panel__item">
+            <a href={toHref("years", sampleYear.slug)}>{sampleYear.data.title}</a>
+          </li>
+        ) : null
+      }
+      {
+        sampleRanking ? (
+          <li class="sidebar-panel__item">
+            <a href={toHref("rankings", sampleRanking.slug)}>{sampleRanking.data.title}</a>
+          </li>
+        ) : null
+      }
+    </ul>
+  </section>
+</SiteLayout>

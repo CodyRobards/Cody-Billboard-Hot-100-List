@@ -1,0 +1,116 @@
+---
+import SiteLayout from "../../layouts/SiteLayout.astro";
+import { getCollection } from "astro:content";
+
+const rankings = await getCollection("rankings");
+const byAscendingRank = [...rankings].sort((a, b) => a.data.ranking - b.data.ranking);
+const top220 = byAscendingRank.filter((entry) => entry.data.tags?.includes("top-220"));
+const bottom60 = byAscendingRank.filter((entry) => entry.data.tags?.includes("bottom-60"));
+const otherRankings = byAscendingRank.filter(
+  (entry) => !entry.data.tags?.includes("top-220") && !entry.data.tags?.includes("bottom-60")
+);
+
+const formatDate = (date: Date) =>
+  new Intl.DateTimeFormat("en", { month: "short", day: "numeric", year: "numeric" }).format(date);
+const toHref = (slug: string) => `/rankings/${slug}/`;
+---
+
+<SiteLayout
+  pageTitle="Rankings"
+  description="Browse the latest Top 220 marathons, Bottom 60 rebounds, and weekly chart highlights."
+>
+  <section class="section" aria-labelledby="top-220-section">
+    <header class="section__header">
+      <h1 class="section__title" id="top-220-section">Top 220 spotlights</h1>
+      <p class="section__lead">
+        Extended mixes, club edits, and national chart climbers gathered for marathon listening.
+      </p>
+    </header>
+    <div class="record-grid">
+      {
+        top220.map((entry) => (
+          <article class="record-card">
+            <h2 class="record-card__title">
+              <a href={toHref(entry.slug)}>{entry.data.title}</a>
+            </h2>
+            <p class="record-card__excerpt">{entry.data.commentary_excerpt}</p>
+            <div class="record-card__meta">
+              <span>{formatDate(entry.data.chart_week)}</span>
+              <span>{entry.data.tags?.join(", ")}</span>
+            </div>
+          </article>
+        ))
+      }
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="bottom-60-section">
+    <header class="section__header">
+      <h2 class="section__title" id="bottom-60-section">Bottom 60 rebounds</h2>
+      <p class="section__lead">
+        Cult favorites and regional hits anchoring the back half of the extended charts.
+      </p>
+    </header>
+    <div class="record-grid">
+      {
+        bottom60.map((entry) => (
+          <article class="record-card">
+            <h3 class="record-card__title">
+              <a href={toHref(entry.slug)}>{entry.data.title}</a>
+            </h3>
+            <p class="record-card__excerpt">{entry.data.commentary_excerpt}</p>
+            <div class="record-card__meta">
+              <span>{formatDate(entry.data.chart_week)}</span>
+              <span>{entry.data.tags?.join(", ")}</span>
+            </div>
+          </article>
+        ))
+      }
+    </div>
+  </section>
+
+  {
+    otherRankings.length ? (
+      <section class="section" aria-labelledby="weekly-flash-section">
+        <header class="section__header">
+          <h2 class="section__title" id="weekly-flash-section">
+            Weekly flashes
+          </h2>
+          <p class="section__lead">
+            Noteworthy Hot 100 weeks and special issues captured for quick reference.
+          </p>
+        </header>
+        <div class="record-grid">
+          {otherRankings.map((entry) => (
+            <article class="record-card">
+              <h3 class="record-card__title">
+                <a href={toHref(entry.slug)}>{entry.data.title}</a>
+              </h3>
+              <p class="record-card__excerpt">{entry.data.commentary_excerpt}</p>
+              <div class="record-card__meta">
+                <span>{formatDate(entry.data.chart_week)}</span>
+                <span>{entry.data.tags?.join(", ")}</span>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+    ) : null
+  }
+
+  <section class="sidebar-panel" aria-labelledby="ranking-guidelines" slot="sidebar">
+    <h2 class="sidebar-panel__title" id="ranking-guidelines">Using the tables</h2>
+    <p class="section__lead">
+      Tables on ranking pages support keyboard sorting. Use the header buttons to reorder by
+      position, movement, or peak.
+    </p>
+    <ul class="sidebar-panel__list">
+      <li class="sidebar-panel__item">
+        Hover or focus chart links to prefetch via the navigation enhancements.
+      </li>
+      <li class="sidebar-panel__item">
+        Return journeys preserve scroll positions for quick comparisons.
+      </li>
+    </ul>
+  </section>
+</SiteLayout>

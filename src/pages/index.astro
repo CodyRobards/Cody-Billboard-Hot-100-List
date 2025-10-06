@@ -1,89 +1,186 @@
 ---
-import "../styles/critical.css";
+import SiteLayout from "../layouts/SiteLayout.astro";
 import ResponsiveImage from "../components/ResponsiveImage.astro";
-import navigationScriptHref from "../scripts/prefetch-navigation.ts?url";
-import serviceWorkerScriptHref from "../scripts/register-service-worker.ts?url";
-import nonCriticalStylesHref from "../styles/noncritical.css?url";
+import { getDecadeGroups, getRankingSlices, getYearGroups } from "../lib/content-utils";
+import { getCollection } from "astro:content";
 
-const title = "Astro Starter";
 const heroImage = {
   src: "/images/meta/archive.jpg",
   width: 1600,
   height: 900,
-  alt: "Filing cabinets and vinyl sleeves representing the Hot 100 archive",
+  alt: "Rows of catalog drawers and vinyl sleeves representing the Hot 100 archive",
   format: "jpg" as const,
 };
-const heroSizes = "(min-width: 72rem) 64rem, 100vw";
-const heroMime = heroImage.format === "jpg" ? "jpeg" : (heroImage.format ?? "jpeg");
+
+const [decadeGroups, yearGroups, rankingSlices, metaEntries] = await Promise.all([
+  getDecadeGroups(),
+  getYearGroups(),
+  getRankingSlices(6, 6),
+  getCollection("meta"),
+]);
+
+const flatten = <T,>(groups: Record<PropertyKey, T[]>) => Object.values(groups).flat();
+const sortByRanking = <T extends { data: { ranking: number } }>(entries: T[]) =>
+  [...entries].sort((a, b) => a.data.ranking - b.data.ranking);
+
+const decadeHighlights = sortByRanking(flatten(decadeGroups)).slice(0, 3);
+const yearHighlights = sortByRanking(flatten(yearGroups)).slice(0, 3);
+const rankingHighlights = [...rankingSlices.top.slice(0, 3), ...rankingSlices.bottom.slice(0, 2)];
+
+const aboutEntry =
+  metaEntries.find((entry) => entry.slug === "about-the-archive") ?? metaEntries[0];
+
+const formatDate = (
+  date: Date,
+  options: Intl.DateTimeFormatOptions = { month: "short", year: "numeric" }
+) => new Intl.DateTimeFormat("en", options).format(date);
+
+const toHref = (segment: string, slug: string) => `/${segment}/${slug}/`;
 ---
 
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{title}</title>
-    <link rel="preload" as="style" href={nonCriticalStylesHref} onload="this.rel='stylesheet'" />
-    <noscript>
-      <link rel="stylesheet" href={nonCriticalStylesHref} />
-    </noscript>
-    <link
-      rel="preload"
-      as="image"
-      href={heroImage.src}
-      imagesrcset={`${heroImage.src} ${heroImage.width}w`}
-      imagesizes={heroSizes}
-      type={`image/${heroMime}`}
-    />
-  </head>
-  <body>
-    <main id="content-root">
-      <section class="hero">
-        <div class="hero__media">
-          <ResponsiveImage
-            image={heroImage}
-            sizes={heroSizes}
-            class="hero__image"
-            loading="eager"
-            decoding="sync"
-          />
-        </div>
-        <div class="hero__content">
-          <h1>{title}</h1>
-          <p>
-            Get started by editing <code>src/pages/index.astro</code> and explore the chart history archive
-            imagery above.
-          </p>
-        </div>
-      </section>
-    </main>
-    <script type="module" defer src={navigationScriptHref}></script>
-    <script type="module" defer src={serviceWorkerScriptHref}></script>
-    <style>
-      .hero {
-        display: grid;
-        gap: 2rem;
-        align-items: center;
-      }
+<SiteLayout
+  description="Explore Cody's Billboard Hot 100 archive with decade retrospectives, yearly recaps, and sortable chart rankings."
+  pageTitle="Home"
+>
+  <article class="hero">
+    <div class="hero__content">
+      <p class="hero__kicker">Design &amp; UX implementation</p>
+      <h1>Billboard Hot 100, organized for deep dives.</h1>
+      <p class="hero__lead">
+        Scan decades of chart history with a layout tuned for readability, instant navigation, and
+        progressive enhancements.
+      </p>
+      <div class="hero__actions">
+        <a class="hero__action" href="/rankings/top-220-neon-nights-1984-08-04/"
+          >Browse the Top 220</a
+        >
+        <a class="hero__action hero__action--secondary" href="/decades/1980s-synthwave-boom/"
+          >See the 1980s spotlight</a
+        >
+      </div>
+    </div>
+    <figure class="hero__media">
+      <ResponsiveImage
+        image={heroImage}
+        sizes="(min-width: 70rem) 28rem, 100vw"
+        class="hero__image"
+      />
+    </figure>
+  </article>
 
-      @media (min-width: 48rem) {
-        .hero {
-          grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-        }
+  <section class="section" aria-labelledby="decade-section">
+    <header class="section__header">
+      <h2 class="section__title" id="decade-section">Decade spotlights</h2>
+      <p class="section__lead">
+        Curated essays capture the sounds that defined each era of the Hot 100.
+      </p>
+    </header>
+    <div class="record-grid">
+      {
+        decadeHighlights.map((entry) => (
+          <article class="record-card">
+            <h3 class="record-card__title">
+              <a href={toHref("decades", entry.slug)}>{entry.data.title}</a>
+            </h3>
+            <p class="record-card__excerpt">{entry.data.commentary_excerpt}</p>
+            <div class="record-card__meta">
+              <span>#{entry.data.ranking}</span>
+              <span>{entry.data.decade}</span>
+              <span>{formatDate(entry.data.release_date)}</span>
+            </div>
+          </article>
+        ))
       }
+    </div>
+  </section>
 
-      .hero__image {
-        width: 100%;
-        height: auto;
-        border-radius: 0.75rem;
-        box-shadow: 0 1.5rem 3rem rgba(15, 23, 42, 0.2);
+  <section class="section" aria-labelledby="year-section">
+    <header class="section__header">
+      <h2 class="section__title" id="year-section">Yearly recaps</h2>
+      <p class="section__lead">
+        Finer-grain stories for seasons of the charts, featuring pivotal releases and crossovers.
+      </p>
+    </header>
+    <div class="record-grid">
+      {
+        yearHighlights.map((entry) => (
+          <article class="record-card">
+            <h3 class="record-card__title">
+              <a href={toHref("years", entry.slug)}>{entry.data.title}</a>
+            </h3>
+            <p class="record-card__excerpt">{entry.data.commentary_excerpt}</p>
+            <div class="record-card__meta">
+              <span>#{entry.data.ranking}</span>
+              <span>{entry.data.year}</span>
+              <span>{formatDate(entry.data.release_date)}</span>
+            </div>
+          </article>
+        ))
       }
+    </div>
+  </section>
 
-      .hero__content {
-        display: flex;
-        flex-direction: column;
-        gap: 1rem;
+  <section class="section" aria-labelledby="ranking-section">
+    <header class="section__header">
+      <h2 class="section__title" id="ranking-section">Ranking dispatches</h2>
+      <p class="section__lead">Top 220 marathons and Bottom 60 rebounds for quick reference.</p>
+    </header>
+    <div class="record-grid">
+      {
+        rankingHighlights.map((entry) => (
+          <article class="record-card">
+            <h3 class="record-card__title">
+              <a href={toHref("rankings", entry.slug)}>{entry.data.title}</a>
+            </h3>
+            <p class="record-card__excerpt">{entry.data.commentary_excerpt}</p>
+            <div class="record-card__meta">
+              <span>
+                {formatDate(entry.data.chart_week, {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
+                })}
+              </span>
+              <span>{entry.data.tags?.join(", ")}</span>
+            </div>
+          </article>
+        ))
       }
-    </style>
-  </body>
-</html>
+    </div>
+  </section>
+
+  {
+    aboutEntry ? (
+      <>
+        <section class="sidebar-panel" aria-labelledby="sidebar-overview" slot="sidebar">
+          <h2 class="sidebar-panel__title" id="sidebar-overview">
+            How this archive works
+          </h2>
+          <p>{aboutEntry.data.commentary_excerpt}</p>
+          <ul class="sidebar-panel__list">
+            <li class="sidebar-panel__item">
+              <a href="/about/">Read the full overview</a>
+            </li>
+            <li class="sidebar-panel__item">
+              <a href="/rankings/">Jump to rankings index</a>
+            </li>
+          </ul>
+        </section>
+        <section class="sidebar-panel" aria-labelledby="sidebar-updates" slot="sidebar">
+          <h2 class="sidebar-panel__title" id="sidebar-updates">
+            Latest dispatches
+          </h2>
+          <ul class="sidebar-panel__list">
+            {rankingHighlights.slice(0, 4).map((entry) => (
+              <li class="sidebar-panel__item">
+                <a href={toHref("rankings", entry.slug)}>
+                  {entry.data.title} · {formatDate(entry.data.chart_week)}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      </>
+    ) : null
+  }
+</SiteLayout>

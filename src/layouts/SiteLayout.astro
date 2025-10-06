@@ -1,0 +1,80 @@
+---
+import "../styles/critical.css";
+import navigationScriptHref from "../scripts/prefetch-navigation.ts?url";
+import serviceWorkerScriptHref from "../scripts/register-service-worker.ts?url";
+import nonCriticalStylesHref from "../styles/noncritical.css?url";
+import SiteNavigation from "../components/SiteNavigation.astro";
+import { getDecadeGroups, getRankingSlices, getYearGroups } from "../lib/content-utils";
+
+interface Props {
+  pageTitle?: string;
+  description?: string;
+}
+
+const { pageTitle, description } = Astro.props as Props;
+const siteTitle = "Cody's Billboard Hot 100 Archive";
+const documentTitle = pageTitle ? `${pageTitle} | ${siteTitle}` : siteTitle;
+const metaDescription =
+  description ??
+  "An instant-reference archive of Billboard Hot 100 milestones with decade retrospectives, yearly recaps, and chart rankings.";
+
+const [decades, years, rankingSlices] = await Promise.all([
+  getDecadeGroups(),
+  getYearGroups(),
+  getRankingSlices(6, 6),
+]);
+
+const currentPath = Astro.url.pathname.endsWith("/")
+  ? Astro.url.pathname
+  : `${Astro.url.pathname}/`;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={metaDescription} />
+    <title>{documentTitle}</title>
+    <link rel="preload" as="style" href={nonCriticalStylesHref} onload="this.rel='stylesheet'" />
+    <noscript>
+      <link rel="stylesheet" href={nonCriticalStylesHref} />
+    </noscript>
+  </head>
+  <body>
+    <a class="skip-link" href="#page-main">Skip to main content</a>
+    <div class="page-frame">
+      <header class="site-header" aria-label="Site introduction">
+        <p class="site-header__kicker">{siteTitle}</p>
+        <p class="site-header__tagline">
+          Liner-note storytelling, instant navigation, and performant delivery inspired by
+          McMaster-Carr's catalog experience.
+        </p>
+      </header>
+      <div class="page-layout" id="content-root">
+        <aside class="page-layout__nav" aria-label="Primary navigation">
+          <SiteNavigation
+            decades={decades}
+            years={years}
+            rankingSlices={rankingSlices}
+            currentPath={currentPath}
+          />
+        </aside>
+        <main id="page-main" class="page-layout__main">
+          <slot />
+        </main>
+        <aside class="page-layout__sidebar">
+          <slot name="sidebar" />
+        </aside>
+      </div>
+      <footer class="site-footer">
+        <p>
+          Compiled for research and design exploration. Built with Astro and tuned for instant-load
+          storytelling.
+        </p>
+      </footer>
+    </div>
+    <script type="module" defer src={navigationScriptHref}></script>
+    <script type="module" defer src={serviceWorkerScriptHref}></script>
+  </body>
+</html>

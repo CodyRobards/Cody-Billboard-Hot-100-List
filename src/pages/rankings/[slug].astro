@@ -1,0 +1,197 @@
+---
+import SiteLayout from "../../layouts/SiteLayout.astro";
+import ResponsiveImage from "../../components/ResponsiveImage.astro";
+import { getCollection } from "astro:content";
+import { getRankingHighlights } from "../../lib/ranking-highlights";
+import sortableTableScriptHref from "../../scripts/sortable-table.ts?url";
+
+export async function getStaticPaths() {
+  const entries = await getCollection("rankings");
+  return entries.map((entry) => ({
+    params: { slug: entry.slug },
+    props: { entryId: entry.id },
+  }));
+}
+
+interface Props {
+  entryId: string;
+}
+
+const { entryId } = Astro.props as Props;
+const [entry] = await getCollection("rankings", ({ id }) => id === entryId);
+
+if (!entry) {
+  throw new Error(`Ranking entry not found for ${entryId}`);
+}
+
+const { Content } = await entry.render();
+const highlights = getRankingHighlights(entry.slug);
+const rankingEntries = await getCollection("rankings");
+
+const year = entry.data.chart_week.getFullYear();
+const sameYear = rankingEntries
+  .filter((item) => item.slug !== entry.slug && item.data.chart_week.getFullYear() === year)
+  .sort((a, b) => a.data.ranking - b.data.ranking)
+  .slice(0, 4);
+
+const entryTags = entry.data.tags ?? [];
+const relatedByTag = entryTags.length
+  ? rankingEntries
+      .filter(
+        (item) =>
+          item.slug !== entry.slug && (item.data.tags ?? []).some((tag) => entryTags.includes(tag))
+      )
+      .slice(0, 4)
+  : [];
+
+const formatDate = (
+  date: Date,
+  options: Intl.DateTimeFormatOptions = { month: "long", day: "numeric", year: "numeric" }
+) => new Intl.DateTimeFormat("en", options).format(date);
+
+const toHref = (slug: string) => `/rankings/${slug}/`;
+const tags = entry.data.tags ?? [];
+---
+
+<SiteLayout pageTitle={entry.data.title} description={entry.data.commentary_excerpt}>
+  <article class="article">
+    <header class="article__header">
+      <p class="article__kicker">{formatDate(entry.data.chart_week)}</p>
+      <h1>{entry.data.title}</h1>
+      <p class="article__lede">{entry.data.commentary_excerpt}</p>
+      <ResponsiveImage
+        image={entry.data.cover_image}
+        class="article__image"
+        sizes="(min-width: 72rem) 32rem, 100vw"
+      />
+      <dl class="article-meta">
+        <div>
+          <dt>Chart week</dt>
+          <dd>{formatDate(entry.data.chart_week)}</dd>
+        </div>
+        <div>
+          <dt>Compiled by</dt>
+          <dd>{entry.data.artist}</dd>
+        </div>
+        <div>
+          <dt>Ranking span</dt>
+          <dd>#{entry.data.ranking}</dd>
+        </div>
+      </dl>
+    </header>
+    <div class="article__body">
+      <p>{entry.data.commentary}</p>
+      <Content />
+    </div>
+    {
+      tags.length ? (
+        <div class="article__tags">
+          {tags.map((tag) => (
+            <span class="tag-chip">{tag}</span>
+          ))}
+        </div>
+      ) : null
+    }
+
+    {
+      highlights.length ? (
+        <section class="article__table" aria-labelledby="ranking-highlights">
+          <h2 class="section__title" id="ranking-highlights">
+            Highlight positions
+          </h2>
+          <table class="ranking-table" data-sortable="true">
+            <thead>
+              <tr>
+                <th scope="col" aria-sort="ascending">
+                  <button
+                    class="ranking-table__sort"
+                    data-sort-key="position"
+                    data-sort-type="number"
+                  >
+                    Position
+                  </button>
+                </th>
+                <th scope="col" aria-sort="none">
+                  <button class="ranking-table__sort" data-sort-key="title">
+                    Track
+                  </button>
+                </th>
+                <th scope="col" aria-sort="none">
+                  <button
+                    class="ranking-table__sort"
+                    data-sort-key="movement"
+                    data-sort-type="number"
+                  >
+                    Movement
+                  </button>
+                </th>
+                <th scope="col" aria-sort="none">
+                  <button class="ranking-table__sort" data-sort-key="peak" data-sort-type="number">
+                    Peak
+                  </button>
+                </th>
+                <th scope="col">Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              {highlights.map((row) => (
+                <tr>
+                  <td data-sort-position data-sort-value={String(row.position)}>
+                    {row.position}
+                  </td>
+                  <td data-sort-title data-sort-value={row.title.toLowerCase()}>
+                    <span class="ranking-table__title">{row.title}</span>
+                    <span class="ranking-table__artist">{row.artist}</span>
+                  </td>
+                  <td data-sort-movement data-sort-value={String(row.movementValue ?? 0)}>
+                    {row.movement}
+                  </td>
+                  <td data-sort-peak data-sort-value={String(row.peak)}>
+                    {row.peak}
+                  </td>
+                  <td>{row.notes}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+      ) : null
+    }
+  </article>
+
+  {
+    sameYear.length ? (
+      <section class="sidebar-panel" aria-labelledby="sidebar-same-year" slot="sidebar">
+        <h2 class="sidebar-panel__title" id="sidebar-same-year">
+          More from {year}
+        </h2>
+        <ul class="sidebar-panel__list">
+          {sameYear.map((item) => (
+            <li class="sidebar-panel__item">
+              <a href={toHref(item.slug)}>{item.data.title}</a>
+            </li>
+          ))}
+        </ul>
+      </section>
+    ) : null
+  }
+
+  {
+    relatedByTag.length ? (
+      <section class="sidebar-panel" aria-labelledby="sidebar-tag-related" slot="sidebar">
+        <h2 class="sidebar-panel__title" id="sidebar-tag-related">
+          Related mixes
+        </h2>
+        <ul class="sidebar-panel__list">
+          {relatedByTag.map((item) => (
+            <li class="sidebar-panel__item">
+              <a href={toHref(item.slug)}>{item.data.title}</a>
+            </li>
+          ))}
+        </ul>
+      </section>
+    ) : null
+  }
+
+  <script type="module" defer src={sortableTableScriptHref}></script>
+</SiteLayout>

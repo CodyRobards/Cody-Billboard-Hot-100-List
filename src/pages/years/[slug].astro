@@ -1,0 +1,150 @@
+---
+import SiteLayout from "../../layouts/SiteLayout.astro";
+import ResponsiveImage from "../../components/ResponsiveImage.astro";
+import { getCollection } from "astro:content";
+import { getDecadeGroups, getYearGroups } from "../../lib/content-utils";
+
+export async function getStaticPaths() {
+  const entries = await getCollection("years");
+  return entries.map((entry) => ({
+    params: { slug: entry.slug },
+    props: { entryId: entry.id },
+  }));
+}
+
+interface Props {
+  entryId: string;
+}
+
+const { entryId } = Astro.props as Props;
+const [entry] = await getCollection("years", ({ id }) => id === entryId);
+
+if (!entry) {
+  throw new Error(`Year entry not found for ${entryId}`);
+}
+
+const { Content } = await entry.render();
+const yearGroups = await getYearGroups();
+const decadeStart = Math.floor(entry.data.year / 10) * 10;
+const decadeLabel = `${decadeStart}s`;
+
+const decadeGroups = await getDecadeGroups();
+const decadeSpotlight = (decadeGroups[decadeLabel] ?? [])[0];
+
+const decadeYearEntries = Object.entries(yearGroups)
+  .filter(([year]) => Math.floor(Number(year) / 10) * 10 === decadeStart)
+  .flatMap(([, entries]) => entries)
+  .sort((a, b) => a.data.ranking - b.data.ranking);
+
+const siblingYears = decadeYearEntries.filter((item) => item.slug !== entry.slug).slice(0, 4);
+
+const rankings = await getCollection("rankings");
+const yearRankings = rankings
+  .filter((ranking) => ranking.data.chart_week.getFullYear() === entry.data.year)
+  .sort((a, b) => a.data.ranking - b.data.ranking)
+  .slice(0, 4);
+
+const formatDate = (
+  date: Date,
+  options: Intl.DateTimeFormatOptions = { month: "long", day: "numeric", year: "numeric" }
+) => new Intl.DateTimeFormat("en", options).format(date);
+
+const toHref = (segment: string, slug: string) => `/${segment}/${slug}/`;
+const tags = entry.data.tags ?? [];
+---
+
+<SiteLayout pageTitle={entry.data.title} description={entry.data.commentary_excerpt}>
+  <article class="article">
+    <header class="article__header">
+      <p class="article__kicker">{entry.data.year}</p>
+      <h1>{entry.data.title}</h1>
+      <p class="article__lede">{entry.data.commentary_excerpt}</p>
+      <ResponsiveImage
+        image={entry.data.cover_image}
+        class="article__image"
+        sizes="(min-width: 72rem) 32rem, 100vw"
+      />
+      <dl class="article-meta">
+        <div>
+          <dt>Release snapshot</dt>
+          <dd>{formatDate(entry.data.release_date)}</dd>
+        </div>
+        <div>
+          <dt>Key artist</dt>
+          <dd>{entry.data.artist}</dd>
+        </div>
+        <div>
+          <dt>Ranking</dt>
+          <dd>#{entry.data.ranking}</dd>
+        </div>
+      </dl>
+    </header>
+    <div class="article__body">
+      <p>{entry.data.commentary}</p>
+      <Content />
+    </div>
+    {
+      tags.length ? (
+        <div class="article__tags">
+          {tags.map((tag) => (
+            <span class="tag-chip">{tag}</span>
+          ))}
+        </div>
+      ) : null
+    }
+  </article>
+
+  {
+    decadeSpotlight ? (
+      <section class="sidebar-panel" aria-labelledby="sidebar-decade" slot="sidebar">
+        <h2 class="sidebar-panel__title" id="sidebar-decade">
+          {decadeLabel} overview
+        </h2>
+        <p class="section__lead">Dive into the decade narrative that frames this year.</p>
+        <ul class="sidebar-panel__list">
+          <li class="sidebar-panel__item">
+            <a href={toHref("decades", decadeSpotlight.slug)}>{decadeSpotlight.data.title}</a>
+          </li>
+        </ul>
+      </section>
+    ) : null
+  }
+
+  {
+    siblingYears.length ? (
+      <section class="sidebar-panel" aria-labelledby="sidebar-sibling-years" slot="sidebar">
+        <h2 class="sidebar-panel__title" id="sidebar-sibling-years">
+          More from the {decadeLabel}
+        </h2>
+        <ul class="sidebar-panel__list">
+          {siblingYears.map((item) => (
+            <li class="sidebar-panel__item">
+              <a href={toHref("years", item.slug)}>
+                {item.data.year} · {item.data.title}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </section>
+    ) : null
+  }
+
+  {
+    yearRankings.length ? (
+      <section class="sidebar-panel" aria-labelledby="sidebar-year-rankings" slot="sidebar">
+        <h2 class="sidebar-panel__title" id="sidebar-year-rankings">
+          Weekly chart runs
+        </h2>
+        <ul class="sidebar-panel__list">
+          {yearRankings.map((item) => (
+            <li class="sidebar-panel__item">
+              <a href={toHref("rankings", item.slug)}>
+                {item.data.title} · {formatDate(item.data.chart_week)}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </section>
+    ) : null
+  }
+</SiteLayout>
