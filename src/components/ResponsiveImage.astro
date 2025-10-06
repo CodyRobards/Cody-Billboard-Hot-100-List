@@ -1,0 +1,45 @@
+---
+import { Image } from "@astrojs/image/components";
+
+interface CoverImage {
+  src: string;
+  width: number;
+  height: number;
+  alt: string;
+  format?: "jpg" | "png" | "webp" | "avif";
+}
+
+interface Props {
+  image?: CoverImage | null;
+  sizes?: string;
+  class?: string;
+  loading?: "eager" | "lazy";
+  decoding?: "async" | "auto" | "sync";
+}
+
+const {
+  image,
+  sizes = "(min-width: 64rem) 60rem, 100vw",
+  class: className,
+  loading = "lazy",
+  decoding = "async",
+} = Astro.props as Props;
+---
+
+{
+  image ? (
+    <Image
+      src={image.src}
+      alt={image.alt}
+      width={image.width}
+      height={image.height}
+      class={className}
+      loading={loading}
+      decoding={decoding}
+      format={["avif", "webp", "jpeg"]}
+      sizes={sizes}
+    />
+  ) : (
+    <slot name="fallback" />
+  )
+}

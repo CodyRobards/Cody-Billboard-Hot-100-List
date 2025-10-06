@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "@astrojs/critters": "npm:astro-critters@^2.2.1",
+    "@astrojs/image": "^0.18.0",
     "astro": "^5.14.1"
   },
   "devDependencies": {
