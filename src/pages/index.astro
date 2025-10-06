@@ -1,5 +1,11 @@
 ---
+/* eslint-disable astro/no-deprecated-astro-resolve */
 const title = "Astro Starter";
+const canResolveScript = typeof Astro.resolve === "function";
+const resolvedScript = canResolveScript
+  ? Astro.resolve("../scripts/prefetch-navigation.ts")
+  : undefined;
+const scriptSrc = resolvedScript ?? "../scripts/prefetch-navigation.ts";
 ---
 
 <!doctype html>
@@ -10,9 +16,10 @@ const title = "Astro Starter";
     <title>{title}</title>
   </head>
   <body>
-    <main>
+    <main id="content-root">
       <h1>{title}</h1>
       <p>Get started by editing <code>src/pages/index.astro</code>.</p>
     </main>
+    <script type="module" src={scriptSrc}></script>
   </body>
 </html>
