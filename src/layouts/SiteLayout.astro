@@ -4,7 +4,7 @@ import navigationScriptHref from "../scripts/prefetch-navigation.ts?url";
 import serviceWorkerScriptHref from "../scripts/register-service-worker.ts?url";
 import nonCriticalStylesHref from "../styles/noncritical.css?url";
 import SiteNavigation from "../components/SiteNavigation.astro";
-import { getDecadeGroups, getRankingSlices, getYearGroups } from "../lib/content-utils";
+import { getYearGroups } from "../lib/content-utils";
 
 interface Props {
   pageTitle?: string;
@@ -16,13 +16,9 @@ const siteTitle = "Cody's Billboard Hot 100 Archive";
 const documentTitle = pageTitle ? `${pageTitle} | ${siteTitle}` : siteTitle;
 const metaDescription =
   description ??
-  "An instant-reference archive of Billboard Hot 100 milestones with decade retrospectives, yearly recaps, and chart rankings.";
+  "An instant-reference archive of Billboard Hot 100 milestones with year-by-year recaps and chart rankings.";
 
-const [decades, years, rankingSlices] = await Promise.all([
-  getDecadeGroups(),
-  getYearGroups(),
-  getRankingSlices(6, 6),
-]);
+const years = await getYearGroups();
 
 const currentPath = Astro.url.pathname.endsWith("/")
   ? Astro.url.pathname
@@ -53,12 +49,7 @@ const currentPath = Astro.url.pathname.endsWith("/")
       </header>
       <div class="page-layout" id="content-root">
         <aside class="page-layout__nav" aria-label="Primary navigation">
-          <SiteNavigation
-            decades={decades}
-            years={years}
-            rankingSlices={rankingSlices}
-            currentPath={currentPath}
-          />
+          <SiteNavigation years={years} currentPath={currentPath} />
         </aside>
         <main id="page-main" class="page-layout__main">
           <slot />

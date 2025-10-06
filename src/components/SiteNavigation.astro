@@ -1,23 +1,16 @@
 ---
-import type { RankingSlices } from "../lib/content-utils";
-import type { DecadeEntry, YearEntry } from "../lib/content-utils";
+import type { YearEntry } from "../lib/content-utils";
 
 interface Props {
-  decades: Record<string, DecadeEntry[]>;
   years: Record<number, YearEntry[]>;
-  rankingSlices: RankingSlices;
   currentPath: string;
 }
 
-const { decades, years, rankingSlices, currentPath } = Astro.props as Props;
+const { years, currentPath } = Astro.props as Props;
 
-const decadeKeys = Object.keys(decades).sort((a, b) => a.localeCompare(b));
 const yearKeys = Object.keys(years)
   .map((key) => Number(key))
-  .sort((a, b) => a - b);
-
-const formatDate = (value: Date) =>
-  new Intl.DateTimeFormat("en", { year: "numeric", month: "short", day: "numeric" }).format(value);
+  .sort((a, b) => b - a);
 
 const ensureTrailingSlash = (href: string) => (href.endsWith("/") ? href : `${href}/`);
 
@@ -25,9 +18,6 @@ const isActive = (href: string) => {
   const normalizedHref = ensureTrailingSlash(href);
   return currentPath === normalizedHref || currentPath.startsWith(normalizedHref);
 };
-
-const topRankingShortcuts = rankingSlices.top.slice(0, 3);
-const bottomRankingShortcuts = rankingSlices.bottom.slice(0, 3);
 ---
 
 <nav class="site-nav" aria-label="Archive navigation">
@@ -43,108 +33,27 @@ const bottomRankingShortcuts = rankingSlices.bottom.slice(0, 3);
       About
     </a>
   </div>
-  <div class="site-nav__section" aria-label="Decades">
-    <h2 class="site-nav__heading">Decade spotlights</h2>
-    {
-      decadeKeys.map((decade) => {
-        const entries = decades[decade] ?? [];
-        return (
-          <details class="site-nav__group" open>
-            <summary class="site-nav__group-label">{decade}</summary>
-            <ul class="site-nav__list">
-              {entries.map((entry) => {
-                const href = ensureTrailingSlash(`/decades/${entry.slug}`);
-                return (
-                  <li class="site-nav__item">
-                    <a
-                      class="site-nav__link"
-                      href={href}
-                      aria-current={isActive(href) ? "page" : undefined}
-                    >
-                      <span class="site-nav__link-title">{entry.data.title}</span>
-                      <span class="site-nav__link-meta">#{entry.data.ranking}</span>
-                    </a>
-                  </li>
-                );
-              })}
-            </ul>
-          </details>
-        );
-      })
-    }
-  </div>
   <div class="site-nav__section" aria-label="Years">
     <h2 class="site-nav__heading">Yearly recaps</h2>
-    <ul class="site-nav__list site-nav__list--grid">
+    <ul class="site-nav__year-list">
       {
         yearKeys.map((year) => {
-          const entries = years[year] ?? [];
-          return entries.map((entry) => {
-            const href = ensureTrailingSlash(`/years/${entry.slug}`);
-            return (
-              <li class="site-nav__item">
-                <a
-                  class="site-nav__link"
-                  href={href}
-                  aria-current={isActive(href) ? "page" : undefined}
-                >
-                  <span class="site-nav__link-title">{entry.data.title}</span>
-                  <span class="site-nav__link-meta">{year}</span>
-                </a>
-              </li>
-            );
-          });
+          const [primaryEntry] = years[year] ?? [];
+          if (!primaryEntry) return null;
+          const href = ensureTrailingSlash(`/years/${primaryEntry.slug}`);
+          return (
+            <li class="site-nav__year-item">
+              <a
+                class="site-nav__year-link"
+                href={href}
+                aria-current={isActive(href) ? "page" : undefined}
+              >
+                {year}
+              </a>
+            </li>
+          );
         })
       }
     </ul>
-  </div>
-  <div class="site-nav__section" aria-label="Ranking shortcuts">
-    <h2 class="site-nav__heading">Ranking shortcuts</h2>
-    <div class="site-nav__quick-groups">
-      <section class="site-nav__quick-group">
-        <h3 class="site-nav__quick-title">Top 220</h3>
-        <ul class="site-nav__list">
-          {
-            topRankingShortcuts.map((entry) => {
-              const href = ensureTrailingSlash(`/rankings/${entry.slug}`);
-              return (
-                <li class="site-nav__item">
-                  <a
-                    class="site-nav__link"
-                    href={href}
-                    aria-current={isActive(href) ? "page" : undefined}
-                  >
-                    <span class="site-nav__link-title">{entry.data.title}</span>
-                    <span class="site-nav__link-meta">{formatDate(entry.data.chart_week)}</span>
-                  </a>
-                </li>
-              );
-            })
-          }
-        </ul>
-      </section>
-      <section class="site-nav__quick-group">
-        <h3 class="site-nav__quick-title">Bottom 60</h3>
-        <ul class="site-nav__list">
-          {
-            bottomRankingShortcuts.map((entry) => {
-              const href = ensureTrailingSlash(`/rankings/${entry.slug}`);
-              return (
-                <li class="site-nav__item">
-                  <a
-                    class="site-nav__link"
-                    href={href}
-                    aria-current={isActive(href) ? "page" : undefined}
-                  >
-                    <span class="site-nav__link-title">{entry.data.title}</span>
-                    <span class="site-nav__link-meta">{formatDate(entry.data.chart_week)}</span>
-                  </a>
-                </li>
-              );
-            })
-          }
-        </ul>
-      </section>
-    </div>
   </div>
 </nav>

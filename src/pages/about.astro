@@ -2,7 +2,7 @@
 import SiteLayout from "../layouts/SiteLayout.astro";
 import ResponsiveImage from "../components/ResponsiveImage.astro";
 import { getCollection } from "astro:content";
-import { getDecadeGroups, getYearGroups } from "../lib/content-utils";
+import { getYearGroups } from "../lib/content-utils";
 
 const [aboutEntry] = await getCollection("meta", ({ slug }) => slug === "about-the-archive");
 const entry = aboutEntry ?? (await getCollection("meta"))[0];
@@ -14,8 +14,6 @@ if (!entry) {
 const { Content } = await entry.render();
 const tags = entry.data.tags ?? [];
 
-const decadeGroups = await getDecadeGroups();
-const primaryDecade = decadeGroups["1980s"]?.[0];
 const yearGroups = await getYearGroups();
 const sampleYear = yearGroups[1984]?.[0];
 const sampleRanking = (await getCollection("rankings")).sort(
@@ -55,13 +53,6 @@ const toHref = (segment: string, slug: string) => `/${segment}/${slug}/`;
   <section class="sidebar-panel" aria-labelledby="about-navigation" slot="sidebar">
     <h2 class="sidebar-panel__title" id="about-navigation">Quick entry points</h2>
     <ul class="sidebar-panel__list">
-      {
-        primaryDecade ? (
-          <li class="sidebar-panel__item">
-            <a href={toHref("decades", primaryDecade.slug)}>{primaryDecade.data.title}</a>
-          </li>
-        ) : null
-      }
       {
         sampleYear ? (
           <li class="sidebar-panel__item">

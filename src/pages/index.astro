@@ -1,7 +1,7 @@
 ---
 import SiteLayout from "../layouts/SiteLayout.astro";
 import ResponsiveImage from "../components/ResponsiveImage.astro";
-import { getDecadeGroups, getRankingSlices, getYearGroups } from "../lib/content-utils";
+import { getYearGroups } from "../lib/content-utils";
 import { getCollection } from "astro:content";
 
 const heroImage = {
@@ -12,20 +12,21 @@ const heroImage = {
   format: "jpg" as const,
 };
 
-const [decadeGroups, yearGroups, rankingSlices, metaEntries] = await Promise.all([
-  getDecadeGroups(),
-  getYearGroups(),
-  getRankingSlices(6, 6),
-  getCollection("meta"),
-]);
+const [yearGroups, metaEntries] = await Promise.all([getYearGroups(), getCollection("meta")]);
 
 const flatten = <T,>(groups: Record<PropertyKey, T[]>) => Object.values(groups).flat();
 const sortByRanking = <T extends { data: { ranking: number } }>(entries: T[]) =>
   [...entries].sort((a, b) => a.data.ranking - b.data.ranking);
 
-const decadeHighlights = sortByRanking(flatten(decadeGroups)).slice(0, 3);
 const yearHighlights = sortByRanking(flatten(yearGroups)).slice(0, 3);
-const rankingHighlights = [...rankingSlices.top.slice(0, 3), ...rankingSlices.bottom.slice(0, 2)];
+
+const sortedYears = Object.keys(yearGroups)
+  .map((year) => Number(year))
+  .sort((a, b) => b - a);
+
+const latestYearEntry = sortedYears
+  .map((year) => (yearGroups[year] ?? [])[0])
+  .find((entry): entry is (typeof yearHighlights)[number] => Boolean(entry));
 
 const aboutEntry =
   metaEntries.find((entry) => entry.slug === "about-the-archive") ?? metaEntries[0];
@@ -39,24 +40,26 @@ const toHref = (segment: string, slug: string) => `/${segment}/${slug}/`;
 ---
 
 <SiteLayout
-  description="Explore Cody's Billboard Hot 100 archive with decade retrospectives, yearly recaps, and sortable chart rankings."
+  description="Explore Cody's Billboard Hot 100 archive with year-by-year recaps and curated chart milestones."
   pageTitle="Home"
 >
   <article class="hero">
     <div class="hero__content">
       <p class="hero__kicker">Design &amp; UX implementation</p>
-      <h1>Billboard Hot 100, organized for deep dives.</h1>
+      <h1>Billboard Hot 100, recapped year by year.</h1>
       <p class="hero__lead">
-        Scan decades of chart history with a layout tuned for readability, instant navigation, and
-        progressive enhancements.
+        Dive into the Hot 100 one season at a time with a catalog built for quick lookup, rich
+        annotations, and responsive performance.
       </p>
       <div class="hero__actions">
-        <a class="hero__action" href="/rankings/top-220-neon-nights-1984-08-04/"
-          >Browse the Top 220</a
-        >
-        <a class="hero__action hero__action--secondary" href="/decades/1980s-synthwave-boom/"
-          >See the 1980s spotlight</a
-        >
+        {
+          latestYearEntry ? (
+            <a class="hero__action" href={toHref("years", latestYearEntry.slug)}>
+              Explore {latestYearEntry.data.year}
+            </a>
+          ) : null
+        }
+        <a class="hero__action hero__action--secondary" href="/years/">Browse all years</a>
       </div>
     </div>
     <figure class="hero__media">
@@ -67,32 +70,6 @@ const toHref = (segment: string, slug: string) => `/${segment}/${slug}/`;
       />
     </figure>
   </article>
-
-  <section class="section" aria-labelledby="decade-section">
-    <header class="section__header">
-      <h2 class="section__title" id="decade-section">Decade spotlights</h2>
-      <p class="section__lead">
-        Curated essays capture the sounds that defined each era of the Hot 100.
-      </p>
-    </header>
-    <div class="record-grid">
-      {
-        decadeHighlights.map((entry) => (
-          <article class="record-card">
-            <h3 class="record-card__title">
-              <a href={toHref("decades", entry.slug)}>{entry.data.title}</a>
-            </h3>
-            <p class="record-card__excerpt">{entry.data.commentary_excerpt}</p>
-            <div class="record-card__meta">
-              <span>#{entry.data.ranking}</span>
-              <span>{entry.data.decade}</span>
-              <span>{formatDate(entry.data.release_date)}</span>
-            </div>
-          </article>
-        ))
-      }
-    </div>
-  </section>
 
   <section class="section" aria-labelledby="year-section">
     <header class="section__header">
@@ -120,35 +97,6 @@ const toHref = (segment: string, slug: string) => `/${segment}/${slug}/`;
     </div>
   </section>
 
-  <section class="section" aria-labelledby="ranking-section">
-    <header class="section__header">
-      <h2 class="section__title" id="ranking-section">Ranking dispatches</h2>
-      <p class="section__lead">Top 220 marathons and Bottom 60 rebounds for quick reference.</p>
-    </header>
-    <div class="record-grid">
-      {
-        rankingHighlights.map((entry) => (
-          <article class="record-card">
-            <h3 class="record-card__title">
-              <a href={toHref("rankings", entry.slug)}>{entry.data.title}</a>
-            </h3>
-            <p class="record-card__excerpt">{entry.data.commentary_excerpt}</p>
-            <div class="record-card__meta">
-              <span>
-                {formatDate(entry.data.chart_week, {
-                  month: "short",
-                  day: "numeric",
-                  year: "numeric",
-                })}
-              </span>
-              <span>{entry.data.tags?.join(", ")}</span>
-            </div>
-          </article>
-        ))
-      }
-    </div>
-  </section>
-
   {
     aboutEntry ? (
       <>
@@ -161,23 +109,24 @@ const toHref = (segment: string, slug: string) => `/${segment}/${slug}/`;
             <li class="sidebar-panel__item">
               <a href="/about/">Read the full overview</a>
             </li>
-            <li class="sidebar-panel__item">
-              <a href="/rankings/">Jump to rankings index</a>
-            </li>
           </ul>
         </section>
         <section class="sidebar-panel" aria-labelledby="sidebar-updates" slot="sidebar">
           <h2 class="sidebar-panel__title" id="sidebar-updates">
-            Latest dispatches
+            Recent yearly recaps
           </h2>
           <ul class="sidebar-panel__list">
-            {rankingHighlights.slice(0, 4).map((entry) => (
-              <li class="sidebar-panel__item">
-                <a href={toHref("rankings", entry.slug)}>
-                  {entry.data.title} · {formatDate(entry.data.chart_week)}
-                </a>
-              </li>
-            ))}
+            {sortedYears.slice(0, 8).map((year) => {
+              const [entry] = yearGroups[year] ?? [];
+              if (!entry) return null;
+              return (
+                <li class="sidebar-panel__item">
+                  <a href={toHref("years", entry.slug)}>
+                    {entry.data.title} · {year}
+                  </a>
+                </li>
+              );
+            })}
           </ul>
         </section>
       </>

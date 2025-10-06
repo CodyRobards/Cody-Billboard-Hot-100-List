@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CollectionEntry } from 'astro:content';
 
-const createEntry = <T extends 'decades' | 'years' | 'rankings'>(
+const createEntry = <T extends 'years' | 'rankings'>(
   collection: T,
   slug: string,
   data: CollectionEntry<T>['data']
@@ -13,47 +13,6 @@ const createEntry = <T extends 'decades' | 'years' | 'rankings'>(
     collection,
     data,
   }) as unknown as CollectionEntry<T>;
-
-const mockDecades = [
-  createEntry('decades', '1990s-pop-resurgence', {
-    title: '1990s Pop Resurgence',
-    slug: '1990s-pop-resurgence',
-    release_date: new Date('1990-01-01'),
-    artist: 'Various Artists',
-    ranking: 5,
-    commentary_excerpt: 'A decade of pop dominance.',
-    commentary: 'Details about the 1990s.',
-    cover_image: {
-      src: '/images/decades/1990s.jpg',
-      width: 1600,
-      height: 900,
-      alt: '1990s collage',
-      format: 'jpg',
-    },
-    tags: ['pop'],
-    decade: '1990s',
-  }),
-  createEntry('decades', '1990s-rb-rise', {
-    title: '1990s R&B Rise',
-    slug: '1990s-rb-rise',
-    release_date: new Date('1994-02-01'),
-    artist: 'R&B Icons',
-    ranking: 3,
-    commentary_excerpt: 'R&B takes over.',
-    commentary: 'Details about R&B.',
-    decade: '1990s',
-  }),
-  createEntry('decades', '1980s-synthwave', {
-    title: '1980s Synthwave',
-    slug: '1980s-synthwave',
-    release_date: new Date('1984-06-01'),
-    artist: 'Synth Masters',
-    ranking: 12,
-    commentary_excerpt: 'Synths everywhere.',
-    commentary: 'Details about the 1980s.',
-    decade: '1980s',
-  }),
-];
 
 const mockYears = [
   createEntry('years', '1999-chart-toppers', {
@@ -214,8 +173,6 @@ const cloneEntries = <T extends { data: Record<string, unknown> }>(entries: read
 
 const getCollectionMock = vi.fn(async (collection: string) => {
   switch (collection) {
-    case 'decades':
-      return cloneEntries(mockDecades);
     case 'years':
       return cloneEntries(mockYears);
     case 'rankings':
@@ -229,28 +186,13 @@ vi.mock('astro:content', () => ({
   getCollection: (collection: string) => getCollectionMock(collection),
 }));
 
-import {
-  getDecadeGroups,
-  getYearGroups,
-  getTopRankings,
-  getBottomRankings,
-  getRankingSlices,
-  getDecadeSlugIndex,
-  getYearSlugIndex,
-  getRankingSlugIndex,
-} from './content-utils';
+import { getYearGroups, getYearSlugIndex, getRankingSlugIndex } from './content-utils';
 
 beforeEach(() => {
   getCollectionMock.mockClear();
 });
 
 describe('content-utils grouping helpers', () => {
-  it('groups decades by decade label and sorts by ranking', async () => {
-    const groups = await getDecadeGroups();
-    expect(Object.keys(groups).sort()).toEqual(['1980s', '1990s']);
-    expect(groups['1990s'].map((entry) => entry.data.ranking)).toEqual([3, 5]);
-  });
-
   it('groups years by numeric year and sorts entries', async () => {
     const groups = await getYearGroups();
     expect(Object.keys(groups).sort()).toEqual(['1999', '2000']);
@@ -258,30 +200,7 @@ describe('content-utils grouping helpers', () => {
   });
 });
 
-describe('ranking slice helpers', () => {
-  it('returns the top rankings up to the specified limit', async () => {
-    const results = await getTopRankings(2);
-    expect(results.map((entry) => entry.slug)).toEqual(['smooth-number-one', 'genie-in-a-bottle']);
-  });
-
-  it('returns the bottom rankings with highest numbers first', async () => {
-    const results = await getBottomRankings(2);
-    expect(results.map((entry) => entry.slug)).toEqual(['obscure-hit-280', 'baby-one-more-time']);
-  });
-
-  it('returns both slices together', async () => {
-    const slices = await getRankingSlices(1, 1);
-    expect(slices.top.map((entry) => entry.slug)).toEqual(['smooth-number-one']);
-    expect(slices.bottom.map((entry) => entry.slug)).toEqual(['obscure-hit-280']);
-  });
-});
-
 describe('slug index helpers', () => {
-  it('builds a decade slug index map', async () => {
-    const index = await getDecadeSlugIndex();
-    expect(index.get('1980s-synthwave')?.data.artist).toBe('Synth Masters');
-  });
-
   it('builds a year slug index map', async () => {
     const index = await getYearSlugIndex();
     expect(index.has('1999-chart-toppers')).toBe(true);

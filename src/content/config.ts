@@ -44,13 +44,6 @@ const rankingEntrySchema = z.object({
   commentary: z.string(),
 });
 
-const decades = defineCollection({
-  type: 'content',
-  schema: baseTrackSchema.extend({
-    decade: z.string(),
-  }),
-});
-
 const years = defineCollection({
   type: 'content',
   schema: baseTrackSchema.extend({
@@ -78,7 +71,6 @@ const meta = defineCollection({
 });
 
 export const collections = {
-  decades,
   years,
   rankings,
   meta,
