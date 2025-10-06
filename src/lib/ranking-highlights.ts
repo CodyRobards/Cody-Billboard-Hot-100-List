@@ -152,6 +152,25 @@ const rankingHighlightMap: Record<string, RankingHighlight[]> = {
   ],
 };
 
-export function getRankingHighlights(slug: string): RankingHighlight[] {
-  return rankingHighlightMap[slug] ?? [];
+export function getRankingHighlights(
+  slug: string,
+  fallbackEntries: { position: number; title: string; artist: string; commentary?: string }[] = []
+): RankingHighlight[] {
+  if (rankingHighlightMap[slug]) {
+    return rankingHighlightMap[slug];
+  }
+
+  if (!fallbackEntries.length) {
+    return [];
+  }
+
+  return fallbackEntries.slice(0, Math.min(fallbackEntries.length, 10)).map((entry) => ({
+    position: entry.position,
+    title: entry.title,
+    artist: entry.artist,
+    movement: '—',
+    movementValue: null,
+    peak: entry.position,
+    notes: entry.commentary ? entry.commentary.split('\n')[0] : 'Imported from research archive.',
+  }));
 }

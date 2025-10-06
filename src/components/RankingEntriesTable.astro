@@ -1,0 +1,121 @@
+---
+interface RankingEntry {
+  position: number;
+  title: string;
+  artist: string;
+  year?: string;
+  genres?: string[];
+  commentary: string;
+}
+
+interface Props {
+  heading: string;
+  description?: string;
+  entries: RankingEntry[];
+}
+
+const { heading, description, entries } = Astro.props as Props;
+---
+
+{
+  entries.length ? (
+    <section class="article__table" aria-labelledby={heading.replace(/\s+/g, "-").toLowerCase()}>
+      <h2 class="section__title" id={heading.replace(/\s+/g, "-").toLowerCase()}>
+        {heading}
+      </h2>
+      {description ? <p class="section__lead">{description}</p> : null}
+      <div class="ranking-table__scroller">
+        <table class="ranking-table ranking-table--full" data-sortable="true">
+          <thead>
+            <tr>
+              <th scope="col" aria-sort="ascending">
+                <button
+                  class="ranking-table__sort"
+                  data-sort-key="position"
+                  data-sort-type="number"
+                >
+                  Position
+                </button>
+              </th>
+              <th scope="col" aria-sort="none">
+                <button class="ranking-table__sort" data-sort-key="title">
+                  Track
+                </button>
+              </th>
+              <th scope="col" aria-sort="none">
+                <button class="ranking-table__sort" data-sort-key="year">
+                  Year
+                </button>
+              </th>
+              <th scope="col">Genres</th>
+              <th scope="col">Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            {entries.map((entry) => (
+              <tr>
+                <td data-sort-position data-sort-value={String(entry.position)}>
+                  {entry.position}
+                </td>
+                <td data-sort-title data-sort-value={entry.title.toLowerCase()}>
+                  <span class="ranking-table__title">{entry.title}</span>
+                  <span class="ranking-table__artist">{entry.artist}</span>
+                </td>
+                <td data-sort-year data-sort-value={(entry.year ?? "").toLowerCase()}>
+                  {entry.year ?? "—"}
+                </td>
+                <td>{entry.genres?.join(", ") ?? "—"}</td>
+                <td class="ranking-table__commentary">{entry.commentary}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  ) : null
+}
+
+<style>
+  .ranking-table__scroller {
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  .ranking-table--full td {
+    vertical-align: top;
+  }
+
+  .ranking-table__commentary {
+    min-width: 18rem;
+    max-width: 36rem;
+    line-height: 1.5;
+  }
+
+  .ranking-table--full .ranking-table__title {
+    display: block;
+    font-weight: 600;
+  }
+
+  .ranking-table--full .ranking-table__artist {
+    display: block;
+    font-size: 0.9rem;
+    color: var(--color-text-muted, rgba(0, 0, 0, 0.65));
+  }
+
+  .ranking-table--full th,
+  .ranking-table--full td {
+    padding: 0.75rem 1rem;
+  }
+
+  .ranking-table--full thead {
+    position: sticky;
+    top: 0;
+    background: var(--color-surface, #fff);
+  }
+
+  @media (max-width: 48rem) {
+    .ranking-table__commentary {
+      min-width: 24rem;
+    }
+  }
+</style>

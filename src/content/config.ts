@@ -22,6 +22,28 @@ const baseTrackSchema = z.object({
   tags: z.array(z.string()).optional(),
 });
 
+const numberOneEntrySchema = z.object({
+  position: z.number().int().min(1),
+  title: z.string(),
+  artist: z.string(),
+  notes: z.array(z.string()).default([]),
+});
+
+const overallRankingEntrySchema = z.object({
+  position: z.number().int().min(1),
+  title: z.string(),
+  artist: z.string(),
+});
+
+const rankingEntrySchema = z.object({
+  position: z.number().int().min(1),
+  title: z.string(),
+  artist: z.string(),
+  year: z.string().optional(),
+  genres: z.array(z.string()).optional(),
+  commentary: z.string(),
+});
+
 const decades = defineCollection({
   type: 'content',
   schema: baseTrackSchema.extend({
@@ -33,6 +55,9 @@ const years = defineCollection({
   type: 'content',
   schema: baseTrackSchema.extend({
     year: z.number().int(),
+    numberOnes: z.array(numberOneEntrySchema).default([]),
+    overallRanking: z.array(overallRankingEntrySchema).default([]),
+    yearSummary: z.string().optional(),
   }),
 });
 
@@ -40,6 +65,8 @@ const rankings = defineCollection({
   type: 'content',
   schema: baseTrackSchema.extend({
     chart_week: z.coerce.date(),
+    subset: z.enum(['top-220', 'bottom-60']).optional(),
+    entries: z.array(rankingEntrySchema).default([]),
   }),
 });
 

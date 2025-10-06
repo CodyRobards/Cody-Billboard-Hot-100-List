@@ -4,11 +4,9 @@ import { getCollection } from "astro:content";
 
 const rankings = await getCollection("rankings");
 const byAscendingRank = [...rankings].sort((a, b) => a.data.ranking - b.data.ranking);
-const top220 = byAscendingRank.filter((entry) => entry.data.tags?.includes("top-220"));
-const bottom60 = byAscendingRank.filter((entry) => entry.data.tags?.includes("bottom-60"));
-const otherRankings = byAscendingRank.filter(
-  (entry) => !entry.data.tags?.includes("top-220") && !entry.data.tags?.includes("bottom-60")
-);
+const top220 = byAscendingRank.filter((entry) => entry.data.subset === "top-220");
+const bottom60 = byAscendingRank.filter((entry) => entry.data.subset === "bottom-60");
+const otherRankings = byAscendingRank.filter((entry) => !entry.data.subset);
 
 const formatDate = (date: Date) =>
   new Intl.DateTimeFormat("en", { month: "short", day: "numeric", year: "numeric" }).format(date);
@@ -36,7 +34,11 @@ const toHref = (slug: string) => `/rankings/${slug}/`;
             <p class="record-card__excerpt">{entry.data.commentary_excerpt}</p>
             <div class="record-card__meta">
               <span>{formatDate(entry.data.chart_week)}</span>
-              <span>{entry.data.tags?.join(", ")}</span>
+              <span>
+                {entry.data.subset
+                  ? entry.data.subset.replace("-", " ")
+                  : entry.data.tags?.join(", ")}
+              </span>
             </div>
           </article>
         ))
@@ -61,7 +63,11 @@ const toHref = (slug: string) => `/rankings/${slug}/`;
             <p class="record-card__excerpt">{entry.data.commentary_excerpt}</p>
             <div class="record-card__meta">
               <span>{formatDate(entry.data.chart_week)}</span>
-              <span>{entry.data.tags?.join(", ")}</span>
+              <span>
+                {entry.data.subset
+                  ? entry.data.subset.replace("-", " ")
+                  : entry.data.tags?.join(", ")}
+              </span>
             </div>
           </article>
         ))
@@ -89,7 +95,11 @@ const toHref = (slug: string) => `/rankings/${slug}/`;
               <p class="record-card__excerpt">{entry.data.commentary_excerpt}</p>
               <div class="record-card__meta">
                 <span>{formatDate(entry.data.chart_week)}</span>
-                <span>{entry.data.tags?.join(", ")}</span>
+                <span>
+                  {entry.data.subset
+                    ? entry.data.subset.replace("-", " ")
+                    : entry.data.tags?.join(", ")}
+                </span>
               </div>
             </article>
           ))}

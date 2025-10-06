@@ -1,0 +1,72 @@
+---
+interface RankingEntry {
+  position: number;
+  title: string;
+  artist: string;
+}
+
+interface Props {
+  heading: string;
+  description?: string;
+  items: RankingEntry[];
+}
+
+const { heading, description, items } = Astro.props as Props;
+---
+
+<section class="article__table" aria-labelledby={heading.replace(/\s+/g, "-").toLowerCase()}>
+  <h2 class="section__title" id={heading.replace(/\s+/g, "-").toLowerCase()}>{heading}</h2>
+  {description ? <p class="section__lead">{description}</p> : null}
+  <ol class="overall-ranking-list">
+    {
+      items.map((entry) => (
+        <li class="overall-ranking-list__item">
+          <span class="overall-ranking-list__position">#{entry.position}</span>
+          <div class="overall-ranking-list__track">
+            <span class="overall-ranking-list__title">{entry.title}</span>
+            <span class="overall-ranking-list__artist">{entry.artist}</span>
+          </div>
+        </li>
+      ))
+    }
+  </ol>
+</section>
+
+<style>
+  .overall-ranking-list {
+    display: grid;
+    gap: 0.75rem;
+    padding: 0;
+    margin: 0;
+    list-style: none;
+  }
+
+  .overall-ranking-list__item {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 1.5rem;
+    align-items: baseline;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px dashed var(--color-border, rgba(0, 0, 0, 0.08));
+  }
+
+  .overall-ranking-list__position {
+    font-family: var(--font-heading, inherit);
+    font-weight: 600;
+    color: var(--color-accent, #8a2be2);
+  }
+
+  .overall-ranking-list__track {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .overall-ranking-list__title {
+    font-weight: 600;
+  }
+
+  .overall-ranking-list__artist {
+    color: var(--color-text-muted, rgba(0, 0, 0, 0.65));
+  }
+</style>
