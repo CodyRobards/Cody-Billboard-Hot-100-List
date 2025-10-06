@@ -53,6 +53,7 @@ const formatDate = (
 
 const toHref = (slug: string) => `/rankings/${slug}/`;
 const tags = entry.data.tags ?? [];
+const showTags = false && tags.length > 0;
 const subsetDescription =
   entry.data.subset === "top-220"
     ? "Complete Top 220 countdown derived from the research archive."
@@ -104,7 +105,7 @@ const tableHeading =
       />
     </div>
     {
-      tags.length ? (
+      showTags ? (
         <div class="article__tags">
           {tags.map((tag) => (
             <span class="tag-chip">{tag}</span>

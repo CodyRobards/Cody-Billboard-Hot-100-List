@@ -1,10 +1,10 @@
 body {
   background-image:
-    linear-gradient(180deg, rgba(247, 244, 239, 0) 0%, rgba(215, 202, 184, 0.35) 100%),
+    linear-gradient(180deg, rgba(18, 12, 8, 0) 0%, rgba(38, 24, 16, 0.65) 100%),
     repeating-linear-gradient(
       90deg,
-      rgba(154, 52, 18, 0.03) 0,
-      rgba(154, 52, 18, 0.03) 1px,
+      rgba(211, 151, 101, 0.05) 0,
+      rgba(211, 151, 101, 0.05) 1px,
       transparent 1px,
       transparent 18px
     );
@@ -17,20 +17,10 @@ body {
     border-color 220ms ease;
 }
 
-.page-frame:hover {
-  background: linear-gradient(180deg, var(--color-surface) 0%, rgba(154, 52, 18, 0.12) 100%);
-  border-color: rgba(154, 52, 18, 0.28);
-}
-
 .site-nav {
   transition:
     background 220ms ease,
     border-color 220ms ease;
-}
-
-.site-nav:hover {
-  background: linear-gradient(180deg, var(--color-surface) 0%, rgba(154, 52, 18, 0.16) 100%);
-  border-color: rgba(154, 52, 18, 0.32);
 }
 
 .record-card {
@@ -39,19 +29,8 @@ body {
     border-color 200ms ease;
 }
 
-.record-card:hover,
-.record-card:focus-within {
-  background: linear-gradient(180deg, #ffffff 0%, rgba(154, 52, 18, 0.12) 100%);
-  border-color: rgba(154, 52, 18, 0.3);
-}
-
 .sidebar-panel {
   transition:
     background 200ms ease,
     border-color 200ms ease;
-}
-
-.sidebar-panel:hover {
-  background: linear-gradient(180deg, #ffffff 0%, rgba(154, 52, 18, 0.1) 100%);
-  border-color: rgba(154, 52, 18, 0.28);
 }

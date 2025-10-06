@@ -1,12 +1,13 @@
 ---
 import SiteLayout from "../../layouts/SiteLayout.astro";
 import { getYearGroups, type YearEntry } from "../../lib/content-utils";
+import { clampExcerpt } from "../../lib/formatting";
 
 const yearGroups = await getYearGroups();
 
 const sortedYears = Object.keys(yearGroups)
   .map((year) => Number(year))
-  .sort((a, b) => b - a);
+  .sort((a, b) => a - b);
 
 const yearEntries: YearEntry[] = sortedYears
   .map((year) => (yearGroups[year] ?? [])[0])
@@ -30,12 +31,10 @@ const toHref = (slug: string) => `/years/${slug}/`;
     <div class="record-grid">
       {
         yearEntries.map((entry) => (
-          <article class="record-card">
-            <h2 class="record-card__title">
-              <a href={toHref(entry.slug)}>{entry.data.title}</a>
-            </h2>
-            <p class="record-card__excerpt">{entry.data.commentary_excerpt}</p>
-          </article>
+          <a class="record-card record-card--link" href={toHref(entry.slug)}>
+            <h2 class="record-card__title">{entry.data.title}</h2>
+            <p class="record-card__excerpt">{clampExcerpt(entry.data.commentary_excerpt)}</p>
+          </a>
         ))
       }
     </div>

@@ -3,6 +3,7 @@ import SiteLayout from "../layouts/SiteLayout.astro";
 // import ResponsiveImage from "../components/ResponsiveImage.astro";
 import { getYearGroups, type YearEntry } from "../lib/content-utils";
 import { getCollection } from "astro:content";
+import { clampExcerpt } from "../lib/formatting";
 
 // const heroImage = {
 //   src: "/images/meta/archive.jpg",
@@ -80,7 +81,7 @@ const toHref = (segment: string, slug: string) => `/${segment}/${slug}/`;
         {
           latestYearEntry ? (
             <a class="hero__action" href={toHref("years", latestYearEntry.slug)}>
-              Explore {latestYearEntry.data.year}
+              Explore latest review
             </a>
           ) : null
         }
@@ -110,7 +111,7 @@ const toHref = (segment: string, slug: string) => `/${segment}/${slug}/`;
             <h3 class="record-card__title">
               <a href={toHref("years", entry.slug)}>{entry.data.title}</a>
             </h3>
-            <p class="record-card__excerpt">{entry.data.commentary_excerpt}</p>
+            <p class="record-card__excerpt">{clampExcerpt(entry.data.commentary_excerpt)}</p>
           </article>
         ))
       }
@@ -124,7 +125,7 @@ const toHref = (segment: string, slug: string) => `/${segment}/${slug}/`;
           <h2 class="sidebar-panel__title" id="sidebar-overview">
             How this archive works
           </h2>
-          <p>{aboutEntry.data.commentary_excerpt}</p>
+          <p>{clampExcerpt(aboutEntry.data.commentary_excerpt)}</p>
           <ul class="sidebar-panel__list">
             <li class="sidebar-panel__item">
               <a href="/about/">Read the full overview</a>
