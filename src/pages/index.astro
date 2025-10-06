@@ -1,13 +1,11 @@
 ---
-/* eslint-disable astro/no-deprecated-astro-resolve */
 import "../styles/critical.css";
 import ResponsiveImage from "../components/ResponsiveImage.astro";
+import navigationScriptHref from "../scripts/prefetch-navigation.ts?url";
+import serviceWorkerScriptHref from "../scripts/register-service-worker.ts?url";
+import nonCriticalStylesHref from "../styles/noncritical.css?url";
 
 const title = "Astro Starter";
-const resolveAsset = typeof Astro.resolve === "function" ? Astro.resolve : (path: string) => path;
-const navigationScript = resolveAsset("../scripts/prefetch-navigation.ts");
-const serviceWorkerScript = resolveAsset("../scripts/register-service-worker.ts");
-const nonCriticalStylesHref = resolveAsset("../styles/noncritical.css");
 const heroImage = {
   src: "/images/meta/archive.jpg",
   width: 1600,
@@ -59,8 +57,8 @@ const heroMime = heroImage.format === "jpg" ? "jpeg" : (heroImage.format ?? "jpe
         </div>
       </section>
     </main>
-    <script type="module" defer src={navigationScript}></script>
-    <script type="module" defer src={serviceWorkerScript}></script>
+    <script type="module" defer src={navigationScriptHref}></script>
+    <script type="module" defer src={serviceWorkerScriptHref}></script>
     <style>
       .hero {
         display: grid;
