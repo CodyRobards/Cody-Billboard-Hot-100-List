@@ -1,5 +1,5 @@
 const HTML_CACHE = 'html-v1';
-const STATIC_CACHE = 'static-v1';
+const STATIC_CACHE = 'static-v2';
 const SHELL_URLS = ['/'];
 
 self.addEventListener('install', (event) => {
@@ -111,15 +111,27 @@ const handleHtmlRequest = (event) => {
 
 const handleStaticAssetRequest = async (request) => {
   const cache = await caches.open(STATIC_CACHE);
-  const cachedResponse = await cache.match(request);
 
-  if (cachedResponse) {
-    return cachedResponse;
-  }
+  try {
+    const response = await fetch(request);
 
-  const response = await fetch(request);
-  if (response && response.ok) {
-    cache.put(request, response.clone());
+    if (response && response.ok) {
+      cache.put(request, response.clone());
+      return response;
+    }
+
+    const cachedResponse = await cache.match(request);
+    if (cachedResponse) {
+      return cachedResponse;
+    }
+
+    return response;
+  } catch (error) {
+    const cachedResponse = await cache.match(request);
+    if (cachedResponse) {
+      return cachedResponse;
+    }
+
+    throw error;
   }
-  return response;
 };
