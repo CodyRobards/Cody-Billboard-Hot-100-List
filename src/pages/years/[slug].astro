@@ -25,6 +25,9 @@ if (!entry) {
   throw new Error(`Year entry not found for ${entryId}`);
 }
 
+const numberOnes = entry.data.numberOnes ?? [];
+const overallRanking = entry.data.overallRanking ?? [];
+
 const { Content } = await entry.render();
 const yearGroups = await getYearGroups();
 const decadeStart = Math.floor(entry.data.year / 10) * 10;
@@ -53,8 +56,6 @@ const formatDate = (
 
 const toHref = (segment: string, slug: string) => `/${segment}/${slug}/`;
 const tags = entry.data.tags ?? [];
-const numberOnes = entry.data.numberOnes ?? [];
-const overallRanking = entry.data.overallRanking ?? [];
 const summaryParagraphs = entry.data.yearSummary
   ? entry.data.yearSummary
       .split(/\n{2,}/)
@@ -66,49 +67,51 @@ const summaryParagraphs = entry.data.yearSummary
 <SiteLayout pageTitle={entry.data.title} description={entry.data.commentary_excerpt}>
   <article class="article">
     <header class="article__header">
-      <p class="article__kicker">{entry.data.year}</p>
-      <h1>{entry.data.title}</h1>
-      <p class="article__lede">{entry.data.commentary_excerpt}</p>
+      <h1>{entry.data.year}</h1>
+      {entry.data.title ? <p class="article__subhead">{entry.data.title}</p> : null}
+      {
+        entry.data.commentary_excerpt ? (
+          <p class="article__lede">{entry.data.commentary_excerpt}</p>
+        ) : null
+      }
       <ResponsiveImage
         image={entry.data.cover_image}
         class="article__image"
         sizes="(min-width: 72rem) 32rem, 100vw"
       />
-      <dl class="article-meta">
-        <div>
-          <dt>Release snapshot</dt>
-          <dd>{formatDate(entry.data.release_date)}</dd>
-        </div>
-        <div>
-          <dt>Key artist</dt>
-          <dd>{entry.data.artist}</dd>
-        </div>
-        <div>
-          <dt>Ranking</dt>
-          <dd>#{entry.data.ranking}</dd>
-        </div>
-      </dl>
     </header>
     <div class="article__body">
-      <p>{entry.data.commentary}</p>
+      {entry.data.commentary ? <p>{entry.data.commentary}</p> : null}
       {summaryParagraphs.map((paragraph) => <p>{paragraph}</p>)}
       <Content />
       {
         numberOnes.length ? (
-          <NumberOnesList
-            heading="Weekly number ones"
-            description={`All ${numberOnes.length} Hot 100 chart-toppers from ${entry.data.year}.`}
-            items={numberOnes}
-          />
+          <>
+            <p>
+              Revisit the {numberOnes.length} Hot 100 number ones that defined {entry.data.year},
+              complete with weekly notes on the wildest chart runs.
+            </p>
+            <NumberOnesList
+              heading="Weekly number ones"
+              description={`All ${numberOnes.length} Hot 100 chart-toppers from ${entry.data.year}.`}
+              items={numberOnes}
+            />
+          </>
         ) : null
       }
       {
         overallRanking.length ? (
-          <OverallRankingList
-            heading="Year-end favorites"
-            description={`Personal ranking of ${overallRanking.length} number ones from ${entry.data.year}.`}
-            items={overallRanking}
-          />
+          <>
+            <p>
+              When the year wrapped, these final rankings captured the songs that stuck with me
+              most.
+            </p>
+            <OverallRankingList
+              heading="Year-end favorites"
+              description={`Personal ranking of ${overallRanking.length} number ones from ${entry.data.year}.`}
+              items={overallRanking}
+            />
+          </>
         ) : null
       }
     </div>

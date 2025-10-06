@@ -502,6 +502,12 @@ a:focus-visible {
   gap: 1rem;
 }
 
+.article__subhead {
+  font-size: var(--scale-0);
+  font-weight: 600;
+  margin: 0;
+}
+
 .article__image {
   width: 100%;
   border-radius: var(--radius-base);
