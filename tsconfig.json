@@ -3,7 +3,7 @@
   "compilerOptions": {
     "baseUrl": ".",
     "moduleResolution": "bundler",
-    "types": ["@astrojs/check"]
+    "types": ["@astrojs/check", "vitest/globals"]
   },
   "include": ["src", "astro.config.mjs", "src/env.d.ts"],
   "exclude": ["dist"]
