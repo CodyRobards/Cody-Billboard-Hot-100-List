@@ -1,6 +1,7 @@
 ---
 import SiteLayout from "../../layouts/SiteLayout.astro";
 import { getCollection } from "astro:content";
+import { clampExcerpt } from "../../lib/formatting";
 
 const rankings = await getCollection("rankings");
 const byAscendingRank = [...rankings].sort((a, b) => a.data.ranking - b.data.ranking);
@@ -31,7 +32,7 @@ const toHref = (slug: string) => `/rankings/${slug}/`;
             <h2 class="record-card__title">
               <a href={toHref(entry.slug)}>{entry.data.title}</a>
             </h2>
-            <p class="record-card__excerpt">{entry.data.commentary_excerpt}</p>
+            <p class="record-card__excerpt">{clampExcerpt(entry.data.commentary_excerpt)}</p>
             <div class="record-card__meta">
               <span>{formatDate(entry.data.chart_week)}</span>
               <span>
@@ -60,7 +61,7 @@ const toHref = (slug: string) => `/rankings/${slug}/`;
             <h3 class="record-card__title">
               <a href={toHref(entry.slug)}>{entry.data.title}</a>
             </h3>
-            <p class="record-card__excerpt">{entry.data.commentary_excerpt}</p>
+            <p class="record-card__excerpt">{clampExcerpt(entry.data.commentary_excerpt)}</p>
             <div class="record-card__meta">
               <span>{formatDate(entry.data.chart_week)}</span>
               <span>
@@ -92,7 +93,7 @@ const toHref = (slug: string) => `/rankings/${slug}/`;
               <h3 class="record-card__title">
                 <a href={toHref(entry.slug)}>{entry.data.title}</a>
               </h3>
-              <p class="record-card__excerpt">{entry.data.commentary_excerpt}</p>
+              <p class="record-card__excerpt">{clampExcerpt(entry.data.commentary_excerpt)}</p>
               <div class="record-card__meta">
                 <span>{formatDate(entry.data.chart_week)}</span>
                 <span>

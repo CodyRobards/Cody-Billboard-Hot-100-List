@@ -70,6 +70,7 @@ const siblingYears = allYearEntries
 
 const toHref = (segment: string, slug: string) => `/${segment}/${slug}/`;
 const tags = entry.data.tags ?? [];
+const showTags = false && tags.length > 0;
 const summaryParagraphs = entry.data.yearSummary
   ? entry.data.yearSummary
       .split(/\n{2,}/)
@@ -97,9 +98,7 @@ const pageDescription =
       <Content />
       {
         numberOnes.length ? (
-          <>
-            <NumberOnesList heading="WEEKLY NUMBER ONES" items={numberOnes} />
-          </>
+          <NumberOnesList heading="WEEKLY NUMBER ONES" items={numberOnes} />
         ) : null
       }
       {
@@ -111,7 +110,7 @@ const pageDescription =
       }
     </div>
     {
-      tags.length ? (
+      showTags ? (
         <div class="article__tags">
           {tags.map((tag) => (
             <span class="tag-chip">{tag}</span>

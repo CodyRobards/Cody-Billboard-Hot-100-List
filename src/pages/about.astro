@@ -2,7 +2,6 @@
 import SiteLayout from "../layouts/SiteLayout.astro";
 import ResponsiveImage from "../components/ResponsiveImage.astro";
 import { getCollection } from "astro:content";
-import { getYearGroups } from "../lib/content-utils";
 
 const [aboutEntry] = await getCollection("meta", ({ slug }) => slug === "about-the-archive");
 const entry = aboutEntry ?? (await getCollection("meta"))[0];
@@ -13,14 +12,7 @@ if (!entry) {
 
 const { Content } = await entry.render();
 const tags = entry.data.tags ?? [];
-
-const yearGroups = await getYearGroups();
-const sampleYear = yearGroups[1984]?.[0];
-const sampleRanking = (await getCollection("rankings")).sort(
-  (a, b) => a.data.ranking - b.data.ranking
-)[0];
-
-const toHref = (segment: string, slug: string) => `/${segment}/${slug}/`;
+const showTags = false && tags.length > 0;
 ---
 
 <SiteLayout pageTitle={entry.data.title} description={entry.data.commentary_excerpt}>
@@ -40,7 +32,7 @@ const toHref = (segment: string, slug: string) => `/${segment}/${slug}/`;
       <Content />
     </div>
     {
-      tags.length ? (
+      showTags ? (
         <div class="article__tags">
           {tags.map((tag) => (
             <span class="tag-chip">{tag}</span>
@@ -49,24 +41,4 @@ const toHref = (segment: string, slug: string) => `/${segment}/${slug}/`;
       ) : null
     }
   </article>
-
-  <section class="sidebar-panel" aria-labelledby="about-navigation" slot="sidebar">
-    <h2 class="sidebar-panel__title" id="about-navigation">Quick entry points</h2>
-    <ul class="sidebar-panel__list">
-      {
-        sampleYear ? (
-          <li class="sidebar-panel__item">
-            <a href={toHref("years", sampleYear.slug)}>{sampleYear.data.title}</a>
-          </li>
-        ) : null
-      }
-      {
-        sampleRanking ? (
-          <li class="sidebar-panel__item">
-            <a href={toHref("rankings", sampleRanking.slug)}>{sampleRanking.data.title}</a>
-          </li>
-        ) : null
-      }
-    </ul>
-  </section>
 </SiteLayout>

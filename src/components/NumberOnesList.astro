@@ -14,13 +14,13 @@ interface Props {
 const { heading, description, items } = Astro.props as Props;
 ---
 
-<section class="article__table" aria-labelledby={heading}>
+<section class="article__table number-one-list__section" aria-labelledby={heading}>
   <u><h2 class="section__title" id={heading}>{heading}</h2></u>
   {description ? <p class="section__lead">{description}</p> : null}
   <ol class="number-one-list">
     {
       items.map((entry) => (
-        <ul class="number-one-list__item">
+        <li class="number-one-list__item">
           <div class="number-one-list__track">
             <span class="number-one-list__title">
               "{entry.title}"<span class="number-one-list__artist"> by {entry.artist}</span>
@@ -33,15 +33,17 @@ const { heading, description, items } = Astro.props as Props;
               ))}
             </ul>
           ) : null}
-        </ul>
+        </li>
       ))
     }
   </ol>
 </section>
 
 <style>
-  .section {
-    padding: 20px;
+  .number-one-list__section {
+    margin-top: clamp(2rem, 4vw, 3rem);
+    padding-top: clamp(1.5rem, 2vw, 2.25rem);
+    border-top: 1px solid var(--color-rule-strong, rgba(255, 255, 255, 0.16));
   }
 
   .number-one-list {
@@ -50,10 +52,11 @@ const { heading, description, items } = Astro.props as Props;
     padding: 0;
     margin: 0;
     list-style: none;
+    border-top: 1px solid transparent;
   }
 
   .number-one-list__item {
-    border-bottom: 1px solid var(--color-border, rgba(0, 0, 0, 0.08));
+    border-bottom: 1px solid var(--color-rule-soft, rgba(255, 255, 255, 0.12));
     padding-bottom: 1.25rem;
   }
 
@@ -79,13 +82,13 @@ const { heading, description, items } = Astro.props as Props;
   .number-one-list__title {
     font-weight: 600;
     font-size: 1.2rem;
-    color: var(--color-text, #000);
+    color: var(--color-ink, #fff);
   }
 
   .number-one-list__artist {
     font-weight: 400;
     font-size: 1.1rem;
-    color: var(--color-text-muted, rgba(0, 0, 0, 0.6));
+    color: var(--color-muted, rgba(255, 255, 255, 0.72));
     display: inline-block;
     white-space: nowrap;
   }
@@ -96,7 +99,7 @@ const { heading, description, items } = Astro.props as Props;
     padding: 0 0 0 1.25rem;
     display: grid;
     gap: 0.6rem;
-    color: var(--color-text-muted, rgba(0, 0, 0, 0.75));
+    color: var(--color-muted, rgba(255, 255, 255, 0.72));
   }
 
   @media (min-width: 48rem) {
