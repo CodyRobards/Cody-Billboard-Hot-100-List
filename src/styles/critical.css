@@ -67,7 +67,7 @@ body {
 }
 
 .page-frame {
-  width: min(1180px, 100%);
+  width: min(1400px, 100%);
   background: var(--color-surface);
   border: 1px solid var(--color-rule);
   border-radius: var(--radius-base);
@@ -116,13 +116,13 @@ body {
   font-size: var(--scale-2);
   line-height: 1.4;
   margin: 0;
-  max-width: 60ch;
+  max-width: 64ch;
 }
 
 .page-layout {
   display: grid;
   gap: clamp(1.5rem, 3vw, 2.5rem);
-  grid-template-columns: minmax(16rem, 1fr) minmax(0, 2.25fr) minmax(14rem, 0.9fr);
+  grid-template-columns: minmax(18rem, 1fr) minmax(0, 2.75fr) minmax(15rem, 1.15fr);
   align-items: start;
 }
 
@@ -135,6 +135,8 @@ body {
   position: sticky;
   top: clamp(1rem, 2vw, 1.5rem);
   align-self: start;
+  max-width: 20rem;
+  width: min(100%, 20rem);
 }
 
 .page-layout__main {
@@ -150,6 +152,8 @@ body {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+  max-width: 22rem;
+  width: min(100%, 22rem);
 }
 
 .site-footer {
@@ -286,7 +290,7 @@ h3 {
 
 p {
   margin: 0;
-  max-width: var(--measure);
+  max-width: clamp(68ch, 2vw + 70ch, 72ch);
 }
 
 a {
@@ -670,7 +674,7 @@ a:focus-visible {
 
 @media (max-width: 1024px) {
   .page-layout {
-    grid-template-columns: minmax(14rem, 1fr) minmax(0, 2fr);
+    grid-template-columns: minmax(15rem, 0.95fr) minmax(0, 2.05fr);
   }
 
   .page-layout__sidebar {
