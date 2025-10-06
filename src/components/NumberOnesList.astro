@@ -1,6 +1,5 @@
 ---
 interface NumberOneEntry {
-  position: number;
   title: string;
   artist: string;
   notes?: string[];
@@ -20,10 +19,10 @@ const { heading, description, items } = Astro.props as Props;
   {description ? <p class="section__lead">{description}</p> : null}
   <ol class="number-one-list">
     {
-      items.map((entry) => (
+      items.map((entry, index) => (
         <li class="number-one-list__item">
           <div class="number-one-list__header">
-            <span class="number-one-list__position">#{entry.position}</span>
+            <span class="number-one-list__position">#{index + 1}</span>
             <div class="number-one-list__track">
               <span class="number-one-list__title">{entry.title}</span>
               <span class="number-one-list__artist">{entry.artist}</span>

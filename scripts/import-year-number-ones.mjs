@@ -221,14 +221,14 @@ const toExcerpt = (text) => {
   return clean.length > 180 ? `${clean.slice(0, 177)}…` : clean;
 };
 
-const buildSlug = (year) => `hot-100-number-ones-${year}`;
+const buildSlug = (year) => String(year);
 
 const buildFrontmatter = (block) => {
   const { year, numberOnes, overallRanking, commentary, summary } = block;
   const excerpt = toExcerpt(commentary);
 
   return {
-    title: `Billboard Hot 100 #1s — ${year}`,
+    title: String(year),
     slug: buildSlug(year),
     release_date: `${year}-12-31`,
     artist: 'Various Artists',
@@ -258,7 +258,7 @@ const main = async () => {
   await Promise.all(
     blocks.map(async (block) => {
       const frontmatter = buildFrontmatter(block);
-      const fileName = `${block.year}-${buildSlug(block.year)}.mdx`;
+      const fileName = `${buildSlug(block.year)}.mdx`;
       const targetFile = path.resolve(TARGET_DIR, fileName);
       await writeFile(targetFile, buildMdx(frontmatter), 'utf8');
     })
