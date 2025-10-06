@@ -186,7 +186,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
-  padding: 1rem 0.75rem 1rem 1rem;
+  padding: 1rem;
   border: 1px solid var(--color-rule);
   border-radius: calc(var(--radius-base) - 4px);
   background: linear-gradient(180deg, var(--color-surface) 0%, var(--color-surface-alt) 100%);
@@ -236,6 +236,15 @@ body {
   margin: 0 0 0.35rem;
 }
 
+.site-nav__year-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.35rem 0.5rem;
+}
+
 .site-nav__year-item {
   margin: 0;
 }
@@ -248,17 +257,21 @@ body {
 
 .site-nav__year-link {
   display: block;
-  padding: 0.35rem 0.25rem;
+  padding: 0.45rem 0.6rem;
   font-size: var(--scale--1);
   font-weight: 600;
   color: inherit;
   text-decoration: none;
   text-align: start;
-  transition: color var(--transition-speed) ease;
+  border-radius: 999px;
+  transition:
+    background-color var(--transition-speed) ease,
+    color var(--transition-speed) ease;
 }
 
 .site-nav__year-link:hover,
 .site-nav__year-link:focus-visible {
+  background: rgba(154, 52, 18, 0.08);
   text-decoration: underline;
   text-decoration-thickness: 2px;
   text-underline-offset: 0.15em;
@@ -368,12 +381,14 @@ a:focus-visible {
   text-decoration: none;
   font-weight: 600;
   box-shadow: 0 0.9rem 1.5rem rgba(154, 52, 18, 0.25);
-  transition: transform var(--transition-speed) ease;
+  transition:
+    background-color var(--transition-speed) ease,
+    color var(--transition-speed) ease;
 }
 
 .hero__action:hover,
 .hero__action:focus-visible {
-  transform: translateY(-2px);
+  background: #b54719;
 }
 
 .hero__action--secondary {
@@ -578,7 +593,7 @@ a:focus-visible {
   transition:
     border-color var(--transition-speed) ease,
     color var(--transition-speed) ease,
-    transform var(--transition-speed) ease;
+    background-color var(--transition-speed) ease;
 }
 
 .article-pagination__link {
@@ -591,11 +606,20 @@ a:focus-visible {
 .article-pagination__button:focus-visible {
   border-color: rgba(154, 52, 18, 0.35);
   color: var(--color-accent);
-  transform: translateY(-2px);
+  background: rgba(154, 52, 18, 0.08);
+}
+
+.article-pagination__form {
+  flex: 1;
+  display: flex;
 }
 
 .article-pagination__button {
   justify-content: center;
+  cursor: pointer;
+  font: inherit;
+  background: linear-gradient(180deg, var(--color-surface) 0%, var(--color-surface-alt) 100%);
+  appearance: none;
 }
 
 .article-pagination__meta {
