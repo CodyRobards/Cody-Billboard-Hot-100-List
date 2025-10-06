@@ -67,7 +67,7 @@ body {
 }
 
 .page-frame {
-  width: min(1400px, 100%);
+  width: min(1600px, 100%);
   background: var(--color-surface);
   border: 1px solid var(--color-rule);
   border-radius: var(--radius-base);
@@ -221,9 +221,9 @@ body {
   list-style: none;
   margin: 0;
   padding: 0;
-  display: grid;
-  gap: 0.25rem;
-  grid-template-columns: repeat(auto-fit, minmax(4rem, 1fr));
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
 }
 
 .site-nav__year-item {
@@ -231,31 +231,24 @@ body {
 }
 
 .site-nav__year-link {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.4rem 0.6rem;
-  border-radius: 999px;
-  border: 1px solid transparent;
+  display: block;
+  padding: 0.35rem 0.25rem;
   font-size: var(--scale--1);
   font-weight: 600;
   color: inherit;
   text-decoration: none;
-  transition:
-    border-color var(--transition-speed) ease,
-    background var(--transition-speed) ease,
-    color var(--transition-speed) ease;
+  text-align: start;
+  transition: color var(--transition-speed) ease;
 }
 
 .site-nav__year-link:hover,
 .site-nav__year-link:focus-visible {
-  border-color: rgba(154, 52, 18, 0.25);
-  background: rgba(154, 52, 18, 0.08);
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.15em;
 }
 
 .site-nav__year-link[aria-current='page'] {
-  border-color: rgba(154, 52, 18, 0.5);
-  background: rgba(154, 52, 18, 0.12);
   color: var(--color-accent);
 }
 
