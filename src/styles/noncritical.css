@@ -13,41 +13,45 @@ body {
 
 .page-frame {
   transition:
-    box-shadow 220ms ease,
-    transform 220ms ease;
+    background 220ms ease,
+    border-color 220ms ease;
 }
 
 .page-frame:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 2.25rem 3.5rem rgba(16, 24, 40, 0.14);
+  background: linear-gradient(180deg, var(--color-surface) 0%, rgba(154, 52, 18, 0.12) 100%);
+  border-color: rgba(154, 52, 18, 0.28);
 }
 
 .site-nav {
-  transition: box-shadow 220ms ease;
+  transition:
+    background 220ms ease,
+    border-color 220ms ease;
 }
 
 .site-nav:hover {
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.75),
-    0 0.6rem 1.5rem rgba(16, 24, 40, 0.08);
+  background: linear-gradient(180deg, var(--color-surface) 0%, rgba(154, 52, 18, 0.16) 100%);
+  border-color: rgba(154, 52, 18, 0.32);
 }
 
 .record-card {
   transition:
-    transform 200ms ease,
-    box-shadow 200ms ease;
+    background 200ms ease,
+    border-color 200ms ease;
 }
 
 .record-card:hover,
 .record-card:focus-within {
-  transform: translateY(-2px);
-  box-shadow: 0 1.25rem 2.5rem rgba(16, 24, 40, 0.12);
+  background: linear-gradient(180deg, #ffffff 0%, rgba(154, 52, 18, 0.12) 100%);
+  border-color: rgba(154, 52, 18, 0.3);
 }
 
 .sidebar-panel {
-  transition: box-shadow 200ms ease;
+  transition:
+    background 200ms ease,
+    border-color 200ms ease;
 }
 
 .sidebar-panel:hover {
-  box-shadow: 0 1.1rem 2.2rem rgba(16, 24, 40, 0.15);
+  background: linear-gradient(180deg, #ffffff 0%, rgba(154, 52, 18, 0.1) 100%);
+  border-color: rgba(154, 52, 18, 0.28);
 }

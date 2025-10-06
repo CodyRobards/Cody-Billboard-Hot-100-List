@@ -138,9 +138,15 @@ const pageDescription =
             </div>
             <div class="article-pagination__item article-pagination__item--random">
               {randomYear ? (
-                <a class="article-pagination__button" href={toHref("years", randomYear.slug)}>
-                  Surprise me
-                </a>
+                <form
+                  class="article-pagination__form"
+                  action={toHref("years", randomYear.slug)}
+                  method="get"
+                >
+                  <button class="article-pagination__button" type="submit">
+                    Surprise me
+                  </button>
+                </form>
               ) : null}
             </div>
             <div class="article-pagination__item article-pagination__item--next">

@@ -12,6 +12,7 @@ interface Props {
 }
 
 const { heading, description, items } = Astro.props as Props;
+const medalIcons = ["🥇", "🥈", "🥉"];
 ---
 
 <section class="article__table" aria-labelledby={heading.replace(/\s+/g, "-").toLowerCase()}>
@@ -19,15 +20,24 @@ const { heading, description, items } = Astro.props as Props;
   {description ? <p class="section__lead">{description}</p> : null}
   <ol class="overall-ranking-list">
     {
-      items.map((entry) => (
-        <li class="overall-ranking-list__item">
-          <span class="overall-ranking-list__position">#{entry.position}</span>
-          <div class="overall-ranking-list__track">
-            <span class="overall-ranking-list__title">{entry.title}</span>
-            <span class="overall-ranking-list__artist">{entry.artist}</span>
-          </div>
-        </li>
-      ))
+      items.map((entry) => {
+        const medal = medalIcons[entry.position - 1];
+        return (
+          <li class="overall-ranking-list__item">
+            <span
+              class={`overall-ranking-list__position ${
+                medal ? "overall-ranking-list__position--medal" : ""
+              }`}
+            >
+              {medal ?? `#${entry.position}`}
+            </span>
+            <div class="overall-ranking-list__track">
+              <span class="overall-ranking-list__title">{entry.title}</span>
+              <span class="overall-ranking-list__artist">{entry.artist}</span>
+            </div>
+          </li>
+        );
+      })
     }
   </ol>
 </section>
@@ -57,6 +67,15 @@ const { heading, description, items } = Astro.props as Props;
     font-family: var(--font-heading, inherit);
     font-weight: 600;
     color: var(--color-accent, #8a2be2);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2.75rem;
+    font-size: 1.05rem;
+  }
+
+  .overall-ranking-list__position--medal {
+    font-size: 1.35rem;
   }
 
   .overall-ranking-list__track {
