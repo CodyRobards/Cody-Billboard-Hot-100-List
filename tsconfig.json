@@ -6,6 +6,6 @@
     "moduleResolution": "bundler",
     "types": ["@astrojs/check", "vitest/globals"]
   },
-  "include": ["src", "astro.config.mjs", "src/env.d.ts"],
+  "include": ["src", "astro.config.mjs", "src/env.d.ts", "scripts/sync-spotify-playlist.mjs"],
   "exclude": ["dist"]
 }
