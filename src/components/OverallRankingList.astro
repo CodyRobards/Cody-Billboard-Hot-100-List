@@ -49,12 +49,7 @@ const medalIcons = ["🥇", "🥈", "🥉"];
                   >
                     Play on Spotify
                   </button>
-                  <div
-                    id={embedId}
-                    class="overall-ranking-list__spotify"
-                    data-spotify-container
-                    hidden
-                  />
+                  <div id={embedId} class="overall-ranking-list__spotify" hidden />
                 </div>
               ) : null}
             </div>
@@ -66,43 +61,48 @@ const medalIcons = ["🥇", "🥈", "🥉"];
 </section>
 
 <script is:inline>
-  const buttons = Array.from(
-    document.querySelectorAll<HTMLButtonElement>(".overall-ranking-list__spotify-toggle")
-  );
-
   const SHOW_LABEL = "Play on Spotify";
   const HIDE_LABEL = "Hide Spotify player";
 
-  for (const button of buttons) {
-    const trackId = button.dataset.trackId;
-    const targetId = button.getAttribute("aria-controls") ?? "";
-    const container = document.getElementById(targetId);
-    if (!trackId || !container) continue;
+  document.addEventListener("DOMContentLoaded", () => {
+    const buttons = document.querySelectorAll(".overall-ranking-list__spotify-toggle");
 
-    let isLoaded = false;
+    for (const button of buttons) {
+      if (!(button instanceof HTMLButtonElement)) continue;
 
-    button.addEventListener("click", () => {
-      const isExpanded = button.getAttribute("aria-expanded") === "true";
-      const nextExpanded = !isExpanded;
+      const trackId = button.dataset.trackId;
+      const targetId = button.getAttribute("aria-controls");
+      const container = targetId ? document.getElementById(targetId) : null;
+      if (!trackId || !container) continue;
 
-      if (nextExpanded && !isLoaded) {
-        const iframe = document.createElement("iframe");
-        iframe.src = `https://open.spotify.com/embed/track/${trackId}`;
-        iframe.loading = "lazy";
-        iframe.allow = "autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture";
-        iframe.title = "Spotify player";
-        iframe.setAttribute("allowtransparency", "true");
-        iframe.width = "100%";
-        iframe.height = "152";
-        container.append(iframe);
-        isLoaded = true;
-      }
+      let isLoaded = false;
 
-      container.toggleAttribute("hidden", !nextExpanded);
-      button.setAttribute("aria-expanded", String(nextExpanded));
-      button.textContent = nextExpanded ? HIDE_LABEL : SHOW_LABEL;
-    });
-  }
+      button.addEventListener("click", () => {
+        const expanded = button.getAttribute("aria-expanded") === "true";
+        const nextExpanded = !expanded;
+
+        if (nextExpanded && !isLoaded) {
+          const iframe = document.createElement("iframe");
+          iframe.src = `https://open.spotify.com/embed/track/${trackId}`;
+          iframe.loading = "lazy";
+          iframe.allow =
+            "autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture";
+          iframe.title = "Spotify player";
+          iframe.setAttribute("allowtransparency", "true");
+          iframe.width = "100%";
+          iframe.height = "152";
+          iframe.style.border = "0";
+          iframe.style.borderRadius = "12px";
+          container.append(iframe);
+          isLoaded = true;
+        }
+
+        container.hidden = !nextExpanded;
+        button.setAttribute("aria-expanded", String(nextExpanded));
+        button.textContent = nextExpanded ? HIDE_LABEL : SHOW_LABEL;
+      });
+    }
+  });
 </script>
 
 <style>
@@ -192,86 +192,9 @@ const medalIcons = ["🥇", "🥈", "🥉"];
     width: min(100%, 25rem);
   }
 
-  .overall-ranking-list__spotify iframe {
-    width: 100%;
-    min-height: 152px;
-    border: 0;
-    border-radius: 12px;
-  }
-
   @media (max-width: 40rem) {
     .overall-ranking-list__spotify {
       width: 100%;
     }
   }
 </style>
-
-<script>
-  if (typeof document !== "undefined") {
-    const initialize = () => {
-      const toggleButtons = document.querySelectorAll(".overall-ranking-list__spotify-toggle");
-
-      toggleButtons.forEach((element) => {
-        if (!(element instanceof HTMLButtonElement)) {
-          return;
-        }
-
-        const targetId = element.getAttribute("aria-controls");
-        if (!targetId) {
-          return;
-        }
-
-        const target = document.getElementById(targetId);
-        if (!(target instanceof HTMLElement)) {
-          return;
-        }
-
-        const showLabel = element.getAttribute("data-show-label") ?? element.textContent ?? "";
-        const hideLabel = element.getAttribute("data-hide-label") ?? showLabel;
-
-        element.setAttribute("aria-expanded", target.hasAttribute("hidden") ? "false" : "true");
-        element.textContent = target.hasAttribute("hidden") ? showLabel : hideLabel;
-
-        element.addEventListener("click", () => {
-          const isHidden = target.hasAttribute("hidden");
-
-          if (isHidden) {
-            const hasLoaded = target.getAttribute("data-spotify-loaded") === "true";
-            if (!hasLoaded) {
-              const src = target.getAttribute("data-spotify-src");
-              if (src) {
-                const iframe = document.createElement("iframe");
-                iframe.setAttribute("src", src);
-                iframe.setAttribute("loading", "lazy");
-                iframe.setAttribute(
-                  "allow",
-                  "autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-                );
-                const title = target.getAttribute("data-spotify-title");
-                if (title) {
-                  iframe.setAttribute("title", title);
-                }
-                target.append(iframe);
-              }
-              target.setAttribute("data-spotify-loaded", "true");
-            }
-
-            target.removeAttribute("hidden");
-            element.setAttribute("aria-expanded", "true");
-            element.textContent = hideLabel;
-          } else {
-            target.setAttribute("hidden", "");
-            element.setAttribute("aria-expanded", "false");
-            element.textContent = showLabel;
-          }
-        });
-      });
-    };
-
-    if (document.readyState === "loading") {
-      document.addEventListener("DOMContentLoaded", initialize, { once: true });
-    } else {
-      initialize();
-    }
-  }
-</script>
