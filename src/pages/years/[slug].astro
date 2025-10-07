@@ -104,6 +104,12 @@ const pageDescription =
       {
         overallRanking.length ? (
           <>
+            <a class="jump-to-overall" href="#overall-rankings">
+              Jump to overall rankings
+              <span class="jump-to-overall__arrow" aria-hidden="true">
+                ↧
+              </span>
+            </a>
             <OverallRankingList heading="OVERALL RANKINGS" items={overallRanking} />
           </>
         ) : null

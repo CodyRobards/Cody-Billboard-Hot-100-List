@@ -46,6 +46,10 @@
   const managedAttribute = 'data-prefetch-managed';
   const managedKeyAttribute = 'data-prefetch-managed-key';
 
+  function isSameDocumentNavigation(url: URL): boolean {
+    return url.pathname === window.location.pathname && url.search === window.location.search;
+  }
+
   function escapeForAttribute(value: string): string {
     if (typeof CSS !== 'undefined' && typeof CSS.escape === 'function') {
       return CSS.escape(value);
@@ -342,6 +346,9 @@
     if (url.origin !== window.location.origin) {
       return;
     }
+    if (isSameDocumentNavigation(url)) {
+      return;
+    }
     if (url.href === currentUrl) {
       return;
     }
@@ -366,6 +373,9 @@
 
       const url = new URL(anchor.href, window.location.href);
       if (url.origin !== window.location.origin) {
+        return;
+      }
+      if (isSameDocumentNavigation(url)) {
         return;
       }
       if (url.href === currentUrl) {

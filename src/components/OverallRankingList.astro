@@ -66,51 +66,6 @@ const resolvedItems = items.map((entry) => ({
   </ol>
 </section>
 
-<script is:inline>
-  const SHOW_LABEL = "Play on Spotify";
-  const HIDE_LABEL = "Hide Spotify player";
-
-  document.addEventListener("DOMContentLoaded", () => {
-    const buttons = document.querySelectorAll(".overall-ranking-list__spotify-toggle");
-
-    for (const button of buttons) {
-      if (!(button instanceof HTMLButtonElement)) continue;
-
-      const trackId = button.dataset.trackId;
-      const targetId = button.getAttribute("aria-controls");
-      const container = targetId ? document.getElementById(targetId) : null;
-      if (!trackId || !container) continue;
-
-      let isLoaded = false;
-
-      button.addEventListener("click", () => {
-        const expanded = button.getAttribute("aria-expanded") === "true";
-        const nextExpanded = !expanded;
-
-        if (nextExpanded && !isLoaded) {
-          const iframe = document.createElement("iframe");
-          iframe.src = `https://open.spotify.com/embed/track/${trackId}`;
-          iframe.loading = "lazy";
-          iframe.allow =
-            "autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture";
-          iframe.title = "Spotify player";
-          iframe.setAttribute("allowtransparency", "true");
-          iframe.width = "100%";
-          iframe.height = "152";
-          iframe.style.border = "0";
-          iframe.style.borderRadius = "12px";
-          container.append(iframe);
-          isLoaded = true;
-        }
-
-        container.hidden = !nextExpanded;
-        button.setAttribute("aria-expanded", String(nextExpanded));
-        button.textContent = nextExpanded ? HIDE_LABEL : SHOW_LABEL;
-      });
-    }
-  });
-</script>
-
 <style>
   .section__lead {
     border-bottom: 1px solid var(--color-border, rgba(0, 0, 0, 0.08));
