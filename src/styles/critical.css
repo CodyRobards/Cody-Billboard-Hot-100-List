@@ -85,9 +85,8 @@ body {
   transform: translateY(0);
 }
 
-.jump-to-overall {
+:is(.jump-to-overall, .jump-to-top) {
   position: fixed;
-  bottom: clamp(1.25rem, 2vw, 2.5rem);
   right: clamp(1.25rem, 2vw, 2.5rem);
   display: inline-flex;
   align-items: center;
@@ -107,22 +106,61 @@ body {
   z-index: 1200;
 }
 
+.jump-to-overall {
+  bottom: clamp(1.25rem, 2vw, 2.5rem);
+}
+
 .jump-to-overall:hover,
-.jump-to-overall:focus-visible {
+.jump-to-overall:focus-visible,
+.jump-to-top:hover,
+.jump-to-top:focus-visible {
   transform: translateY(-0.15rem);
   box-shadow: 0 1.5rem 3rem rgba(0, 0, 0, 0.6);
+}
+
+.jump-to-overall:hover,
+.jump-to-overall:focus-visible {
   background-color: #e0a871;
 }
 
-.jump-to-overall:focus-visible {
+.jump-to-top:hover,
+.jump-to-top:focus-visible {
+  background-color: rgba(246, 238, 227, 0.95);
+}
+
+.jump-to-top {
+  top: clamp(1.25rem, 2vw, 2.5rem);
+  background: var(--color-surface);
+  color: var(--color-text, #120c08);
+  border-color: rgba(18, 12, 8, 0.25);
+  box-shadow: 0 0.75rem 2rem rgba(0, 0, 0, 0.35);
+}
+
+.jump-to-top.is-visible {
+  animation: fade-in-up 250ms ease;
+}
+
+:is(.jump-to-overall:focus-visible, .jump-to-top:focus-visible) {
   outline: 3px solid rgba(246, 238, 227, 0.85);
   outline-offset: 4px;
 }
 
-.jump-to-overall__arrow {
+:is(.jump-to-overall__arrow, .jump-to-top__arrow) {
   font-size: 1.2em;
   line-height: 1;
   display: inline-flex;
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @media (max-width: 40rem) {
@@ -130,21 +168,32 @@ body {
     bottom: 1rem;
     right: 1rem;
   }
+
+  .jump-to-top {
+    top: 1rem;
+    right: 1rem;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .jump-to-overall {
+  :is(.jump-to-overall, .jump-to-top) {
     transition: none;
   }
 
   .jump-to-overall:hover,
-  .jump-to-overall:focus-visible {
+  .jump-to-overall:focus-visible,
+  .jump-to-top:hover,
+  .jump-to-top:focus-visible {
     transform: none;
+  }
+
+  .jump-to-top.is-visible {
+    animation: none;
   }
 }
 
 @media print {
-  .jump-to-overall {
+  :is(.jump-to-overall, .jump-to-top) {
     display: none;
   }
 }

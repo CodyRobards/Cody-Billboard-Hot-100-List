@@ -22,15 +22,27 @@ if (hasDOM) {
 
     const createIframe = (trackId: string): HTMLIFrameElement => {
       const iframe = document.createElement('iframe');
-      iframe.src = `https://open.spotify.com/embed/track/${trackId}`;
+      const src = new URL(`https://open.spotify.com/embed/track/${trackId}`);
+      src.searchParams.set('utm_source', 'oembed');
+      src.searchParams.set('autoplay', '1');
+      iframe.src = src.toString();
       iframe.loading = 'lazy';
       iframe.allow = IFRAME_ALLOW;
       iframe.title = 'Spotify player';
       iframe.setAttribute('allowtransparency', 'true');
       iframe.width = '100%';
-      iframe.height = '152';
+      iframe.height = '80';
+      iframe.style.minHeight = '80px';
+      iframe.style.maxHeight = '80px';
       iframe.style.border = '0';
       iframe.style.borderRadius = '12px';
+      iframe.addEventListener('load', () => {
+        try {
+          iframe.contentWindow?.postMessage({ command: 'play' }, '*');
+        } catch {
+          // Ignore playback errors; Spotify will fall back to manual play.
+        }
+      });
       return iframe;
     };
 
