@@ -34,7 +34,7 @@ const medalIcons = ["🥇", "🥈", "🥉"];
               {medal ?? `${entry.position}.`}
             </span>
             <div class="overall-ranking-list__content">
-              <div class="overall-ranking-list__track">
+              <div class="overall-ranking-list__details">
                 <span class="overall-ranking-list__title">{entry.title}</span>
                 <span class="overall-ranking-list__artist">{entry.artist}</span>
               </div>
@@ -143,15 +143,19 @@ const medalIcons = ["🥇", "🥈", "🥉"];
 
   .overall-ranking-list__content {
     display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
+    flex-direction: row;
+    align-items: center;
+    gap: 1.5rem;
     flex: 1;
+    flex-wrap: wrap;
   }
 
-  .overall-ranking-list__track {
+  .overall-ranking-list__details {
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
+    flex: 1 1 15rem;
+    min-width: 0;
   }
 
   .overall-ranking-list__title {
@@ -165,7 +169,10 @@ const medalIcons = ["🥇", "🥈", "🥉"];
   .overall-ranking-list__preview {
     display: flex;
     flex-direction: column;
+    align-items: flex-start;
     gap: 0.5rem;
+    flex: 0 1 18rem;
+    max-width: 100%;
   }
 
   .overall-ranking-list__spotify-toggle {
@@ -190,6 +197,23 @@ const medalIcons = ["🥇", "🥈", "🥉"];
 
   .overall-ranking-list__spotify {
     width: min(100%, 25rem);
+  }
+
+  @media (max-width: 48rem) {
+    .overall-ranking-list__content {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.75rem;
+    }
+
+    .overall-ranking-list__details {
+      flex: 1 1 auto;
+    }
+
+    .overall-ranking-list__preview {
+      width: 100%;
+      max-width: none;
+    }
   }
 
   @media (max-width: 40rem) {
