@@ -31,10 +31,159 @@
   }
   const contentRootEl: HTMLElement = contentRoot;
 
+  interface SerializedHeadNode {
+    tagName: 'STYLE' | 'LINK';
+    attributes: Record<string, string>;
+    content?: string;
+  }
+
   interface PageEntry {
     html: string;
     title: string;
+    headNodes: SerializedHeadNode[];
   }
+
+  const managedAttribute = 'data-prefetch-managed';
+  const managedKeyAttribute = 'data-prefetch-managed-key';
+
+  function escapeForAttribute(value: string): string {
+    if (typeof CSS !== 'undefined' && typeof CSS.escape === 'function') {
+      return CSS.escape(value);
+    }
+    return value.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+  }
+
+  function serializeElement(element: Element): SerializedHeadNode | null {
+    if (!(element instanceof HTMLStyleElement || element instanceof HTMLLinkElement)) {
+      return null;
+    }
+
+    if (element instanceof HTMLLinkElement) {
+      const rel = element.getAttribute('rel');
+      if (!rel || !rel.toLowerCase().split(/\s+/).includes('stylesheet')) {
+        return null;
+      }
+    }
+
+    const attributes: Record<string, string> = {};
+    for (const { name, value } of Array.from(element.attributes)) {
+      if (name === managedAttribute || name === managedKeyAttribute) {
+        continue;
+      }
+      attributes[name] = value;
+    }
+
+    if (element instanceof HTMLStyleElement) {
+      return {
+        tagName: 'STYLE',
+        attributes,
+        content: element.textContent ?? '',
+      };
+    }
+
+    return {
+      tagName: 'LINK',
+      attributes,
+    };
+  }
+
+  function serializeHeadNodesFromDocument(doc: Document): SerializedHeadNode[] {
+    const nodes: SerializedHeadNode[] = [];
+    const elements = doc.head?.querySelectorAll('style, link[rel~="stylesheet"]');
+    if (!elements) {
+      return nodes;
+    }
+    elements.forEach((element) => {
+      const serialized = serializeElement(element);
+      if (serialized) {
+        nodes.push(serialized);
+      }
+    });
+    return nodes;
+  }
+
+  function getHeadNodeKey(node: SerializedHeadNode): string {
+    return JSON.stringify({
+      tagName: node.tagName,
+      attributes: node.attributes,
+      content: node.content ?? null,
+    });
+  }
+
+  function ensureManagedAttributes() {
+    const elements = document.head?.querySelectorAll('style, link[rel~="stylesheet"]');
+    if (!elements) {
+      return;
+    }
+    elements.forEach((element) => {
+      const serialized = serializeElement(element);
+      if (!serialized) {
+        return;
+      }
+      element.setAttribute(managedAttribute, 'true');
+      element.setAttribute(managedKeyAttribute, getHeadNodeKey(serialized));
+    });
+  }
+
+  function getManagedHeadNodes(): SerializedHeadNode[] {
+    const nodes: SerializedHeadNode[] = [];
+    const elements = document.head?.querySelectorAll(`[${managedAttribute}]`);
+    if (!elements) {
+      return nodes;
+    }
+    elements.forEach((element) => {
+      const serialized = serializeElement(element);
+      if (serialized) {
+        nodes.push(serialized);
+      }
+    });
+    return nodes;
+  }
+
+  function createElementFromSerialized(node: SerializedHeadNode): Element {
+    const element = document.createElement(node.tagName.toLowerCase());
+    for (const [name, value] of Object.entries(node.attributes)) {
+      element.setAttribute(name, value);
+    }
+    if (node.tagName === 'STYLE' && node.content !== undefined) {
+      element.textContent = node.content;
+    }
+    element.setAttribute(managedAttribute, 'true');
+    element.setAttribute(managedKeyAttribute, getHeadNodeKey(node));
+    return element;
+  }
+
+  function syncHeadNodes(headNodes: SerializedHeadNode[]) {
+    const desiredKeys = new Set<string>();
+    headNodes.forEach((node) => desiredKeys.add(getHeadNodeKey(node)));
+
+    const managedElements = Array.from(
+      document.head?.querySelectorAll(`[${managedAttribute}]`) ?? []
+    );
+    managedElements.forEach((element) => {
+      const key = element.getAttribute(managedKeyAttribute);
+      if (!key || !desiredKeys.has(key)) {
+        element.remove();
+      }
+    });
+
+    const fragment = document.createDocumentFragment();
+    headNodes.forEach((node) => {
+      const key = getHeadNodeKey(node);
+      const existing = document.head?.querySelector(
+        `[${managedKeyAttribute}="${escapeForAttribute(key)}"]`
+      );
+      if (existing) {
+        fragment.append(existing);
+        return;
+      }
+      fragment.append(createElementFromSerialized(node));
+    });
+
+    document.head?.append(fragment);
+  }
+
+  ensureManagedAttributes();
 
   const cache = new Map<string, PageEntry>();
   const inflight = new Map<string, Promise<PageEntry>>();
@@ -43,6 +192,7 @@
   cache.set(currentUrl, {
     html: contentRootEl.innerHTML,
     title: document.title,
+    headNodes: getManagedHeadNodes(),
   });
 
   history.replaceState(
@@ -108,7 +258,11 @@
           throw new Error('Missing content root in response');
         }
         const title = doc.title || document.title;
-        const entry: PageEntry = { html: nextContent.innerHTML, title };
+        const entry: PageEntry = {
+          html: nextContent.innerHTML,
+          title,
+          headNodes: serializeHeadNodesFromDocument(doc),
+        };
         cache.set(href, entry);
         return entry;
       })
@@ -127,6 +281,7 @@
   }
 
   function swapContent(entry: PageEntry) {
+    syncHeadNodes(entry.headNodes);
     contentRootEl.innerHTML = entry.html;
     document.title = entry.title;
   }
@@ -143,6 +298,7 @@
     cache.set(currentUrl, {
       html: contentRootEl.innerHTML,
       title: document.title,
+      headNodes: getManagedHeadNodes(),
     });
 
     swapContent(entry);
