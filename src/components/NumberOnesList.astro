@@ -23,7 +23,7 @@ const { heading, description, items } = Astro.props as Props;
         <li class="number-one-list__item">
           <div class="number-one-list__track">
             <span class="number-one-list__title">
-              "{entry.title}"<span class="number-one-list__artist"> by {entry.artist}</span>
+              "{entry.title}"<span class="number-one-list__artist">by {entry.artist}</span>
             </span>
           </div>
           {entry.notes && entry.notes.length ? (
@@ -41,7 +41,7 @@ const { heading, description, items } = Astro.props as Props;
 
 <style>
   .number-one-list__section {
-    margin-top: clamp(2rem, 4vw, 3rem);
+    margin-top: clamp(1rem, 2vw, 1.5rem);
     padding-top: clamp(1.5rem, 2vw, 2.25rem);
     border-top: 1px solid var(--color-rule-strong, rgba(255, 255, 255, 0.16));
   }
@@ -83,14 +83,18 @@ const { heading, description, items } = Astro.props as Props;
     font-weight: 600;
     font-size: 1.2rem;
     color: var(--color-ink, #fff);
+    line-break: loose;
+    word-break: keep-all;
+    overflow-wrap: break-word;
   }
 
   .number-one-list__artist {
     font-weight: 400;
     font-size: 1.1rem;
     color: var(--color-muted, rgba(255, 255, 255, 0.72));
-    display: inline-block;
+    display: inline;
     white-space: nowrap;
+    margin-left: 0.25rem;
   }
 
   .number-one-list__notes {

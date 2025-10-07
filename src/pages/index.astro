@@ -49,7 +49,8 @@ const selectRandomYears = (groups: Record<number, YearEntry[]>, count: number, s
   return selection;
 };
 
-const yearHighlights = selectRandomYears(yearGroups, 4, 20240529);
+const seed = Math.floor(Math.random() * 90000000) + 10000000;
+const yearHighlights = selectRandomYears(yearGroups, 4, seed);
 
 const sortedYears = Object.keys(yearGroups)
   .map((year) => Number(year))
@@ -61,7 +62,6 @@ const latestYearEntry = sortedYears
 
 const aboutEntry =
   metaEntries.find((entry) => entry.slug === "about-the-archive") ?? metaEntries[0];
-
 const toHref = (segment: string, slug: string) => `/${segment}/${slug}/`;
 ---
 
@@ -71,11 +71,10 @@ const toHref = (segment: string, slug: string) => `/${segment}/${slug}/`;
 >
   <article class="hero">
     <div class="hero__content">
-      <p class="hero__kicker">Design &amp; UX implementation</p>
-      <h1>Billboard Hot 100, recapped year by year.</h1>
+      <p class="hero__kicker">Billboard Hot 100</p>
+      <h1>Every #1 Hit in the U.S. Ranked!</h1>
       <p class="hero__lead">
-        Dive into the Hot 100 one season at a time with a catalog built for quick lookup, rich
-        annotations, and responsive performance.
+        Dive into the nightmare of a writing project I undertook in August 2021!
       </p>
       <div class="hero__actions">
         {
@@ -99,20 +98,16 @@ const toHref = (segment: string, slug: string) => `/${segment}/${slug}/`;
 
   <section class="section" aria-labelledby="year-section">
     <header class="section__header">
-      <h2 class="section__title" id="year-section">Yearly Rankings</h2>
-      <p class="section__lead">
-        Finer-grain stories for seasons of the charts, featuring pivotal releases and crossovers.
-      </p>
+      <h2 class="section__title" id="year-section">Select a Random Year</h2>
+      <p class="section__lead">Check out the thoughts & rankings for one of the following years.</p>
     </header>
     <div class="record-grid">
       {
         yearHighlights.map((entry) => (
-          <article class="record-card">
-            <h3 class="record-card__title">
-              <a href={toHref("years", entry.slug)}>{entry.data.title}</a>
-            </h3>
+          <a class="record-card record-card--link" href={toHref("years", entry.slug)}>
+            <h2 class="record-card__title">{entry.data.title}</h2>
             <p class="record-card__excerpt">{clampExcerpt(entry.data.commentary_excerpt)}</p>
-          </article>
+          </a>
         ))
       }
     </div>

@@ -245,13 +245,14 @@ body {
   margin: 0;
   padding: 0.15rem 0;
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0.25rem 0.4rem;
   justify-items: center;
 }
 
 .site-nav__year-item {
   margin: 0;
+  padding: 0rem;
 }
 
 .site-nav__year-item.is-current .site-nav__year-link {
@@ -263,8 +264,8 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.35rem 0.5rem;
-  min-height: 2.2rem;
+  padding: 0rem 0.5rem;
+  min-height: 1.9rem;
   font-size: var(--scale--1);
   font-weight: 600;
   color: inherit;
@@ -351,14 +352,6 @@ a:focus-visible {
   gap: clamp(1.5rem, 3vw, 2.5rem);
   grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
   align-items: center;
-}
-
-.hero__kicker {
-  font-size: var(--scale--1);
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
-  margin-bottom: 0.5rem;
 }
 
 .hero__lead {
@@ -524,7 +517,8 @@ a:focus-visible {
   box-shadow: var(--shadow-soft);
 }
 
-.article__kicker {
+.article__kicker,
+.hero__kicker {
   font-size: var(--scale--1);
   font-weight: 600;
   letter-spacing: 0.12em;
@@ -769,7 +763,7 @@ a:focus-visible {
   }
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 1600px) {
   .site-nav__year-list {
     grid-template-columns: repeat(2, 1fr);
   }

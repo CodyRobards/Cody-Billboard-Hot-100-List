@@ -29,7 +29,7 @@ const medalIcons = ["🥇", "🥈", "🥉"];
                 medal ? "overall-ranking-list__position--medal" : ""
               }`}
             >
-              {medal ?? `#${entry.position}`}
+              {medal ?? `${entry.position}.`}
             </span>
             <div class="overall-ranking-list__track">
               <span class="overall-ranking-list__title">{entry.title}</span>
