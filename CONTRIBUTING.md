@@ -43,6 +43,15 @@ npm run build
 
 If your change affects content or data fetching, also add or update relevant tests or validation scripts. Include command outputs in your PR description when possible.
 
+## Updating Spotify Track References
+
+Rankings can embed Spotify players when a matching track ID is available. These IDs live in [`src/data/spotify-tracks.ts`](src/data/spotify-tracks.ts) so that the same playlist metadata can be reused across pages.
+
+1. Locate the track in the shared playlist and copy its Spotify URI or URL. The track ID is the alphanumeric string at the end of the URL.
+2. Add or update the entry in `spotify-tracks.ts`, keeping the `title` and `artist` values consistent with the playlist naming. The lookup helper normalizes whitespace and casing, so you do not need to alter punctuation.
+3. If the MDX frontmatter for a ranking already specifies `spotifyTrackId`, prefer updating the shared data file instead—the component will automatically use the shared ID when one exists.
+4. Run the required checks above and include any relevant notes in your pull request.
+
 ## Pull Request Guidelines
 
 - Reference the related issue in the PR description.

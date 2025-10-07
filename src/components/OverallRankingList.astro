@@ -1,4 +1,6 @@
 ---
+import { getSpotifyTrackId } from "../data/spotify-tracks";
+
 interface RankingEntry {
   position: number;
   title: string;
@@ -14,6 +16,10 @@ interface Props {
 
 const { heading, description, items } = Astro.props as Props;
 const medalIcons = ["🥇", "🥈", "🥉"];
+const resolvedItems = items.map((entry) => ({
+  ...entry,
+  spotifyTrackId: entry.spotifyTrackId ?? getSpotifyTrackId(entry.title, entry.artist),
+}));
 ---
 
 <section class="article__table" aria-labelledby={heading.replace(/\s+/g, "-").toLowerCase()}>
@@ -21,7 +27,7 @@ const medalIcons = ["🥇", "🥈", "🥉"];
   {description ? <p class="section__lead">{description}</p> : null}
   <ol class="overall-ranking-list">
     {
-      items.map((entry) => {
+      resolvedItems.map((entry) => {
         const medal = medalIcons[entry.position - 1];
         const embedId = `spotify-${entry.position}`;
         return (
