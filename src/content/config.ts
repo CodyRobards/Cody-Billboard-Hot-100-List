@@ -32,6 +32,7 @@ const overallRankingEntrySchema = z.object({
   position: z.number().int().min(1),
   title: z.string(),
   artist: z.string(),
+  spotifyTrackId: z.string().optional(),
 });
 
 const rankingEntrySchema = z.object({
