@@ -307,6 +307,14 @@
 
     swapContent(entry);
 
+    document.dispatchEvent(
+      new CustomEvent('prefetch:navigated', {
+        detail: {
+          url: url.href,
+        },
+      })
+    );
+
     if (pushState) {
       history.pushState({ scrollY }, '', url.pathname + url.search + url.hash);
     } else {

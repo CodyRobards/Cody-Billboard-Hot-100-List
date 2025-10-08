@@ -1,9 +1,14 @@
-(() => {
-  if (typeof window === 'undefined' || typeof document === 'undefined') {
+const hasDOM = typeof window !== 'undefined' && typeof document !== 'undefined';
+
+const SORTABLE_TABLE_SELECTOR = "[data-sortable='true']";
+const SORT_HANDLER_INITIALIZED_ATTR = 'sortHandlerInitialized';
+
+export function initializeSortableTables() {
+  if (!hasDOM) {
     return;
   }
 
-  const tables = Array.from(document.querySelectorAll<HTMLTableElement>("[data-sortable='true']"));
+  const tables = Array.from(document.querySelectorAll<HTMLTableElement>(SORTABLE_TABLE_SELECTOR));
   if (!tables.length) {
     return;
   }
@@ -16,6 +21,10 @@
       table.querySelectorAll<HTMLButtonElement>('.ranking-table__sort[data-sort-key]')
     );
 
+    if (!sortButtons.length) {
+      return;
+    }
+
     const resetSortState = () => {
       sortButtons.forEach((button) => {
         const header = button.closest('th');
@@ -23,8 +32,14 @@
       });
     };
 
+    resetSortState();
+
     sortButtons.forEach((button) => {
-      button.addEventListener('click', () => {
+      if (button.dataset[SORT_HANDLER_INITIALIZED_ATTR] === 'true') {
+        return;
+      }
+
+      const handleClick = () => {
         const key = button.dataset.sortKey;
         if (!key) return;
 
@@ -56,7 +71,15 @@
         });
 
         rows.forEach((row) => body.appendChild(row));
-      });
+      };
+
+      button.addEventListener('click', handleClick);
+      button.dataset[SORT_HANDLER_INITIALIZED_ATTR] = 'true';
     });
   });
-})();
+}
+
+if (hasDOM) {
+  initializeSortableTables();
+  document.addEventListener('prefetch:navigated', initializeSortableTables);
+}
