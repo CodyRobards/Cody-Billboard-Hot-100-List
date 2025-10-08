@@ -26,7 +26,16 @@ const headingId = slugifyHeading(heading);
         <li class="number-one-list__item">
           <div class="number-one-list__track">
             <span class="number-one-list__title">
-              "{entry.title}"<span class="number-one-list__artist">by {entry.artist}</span>
+              "{entry.title}"
+              <span class="number-one-list__artist">
+                {" by "}
+                <a
+                  class="number-one-list__artist-link"
+                  href={`/search/?q=${encodeURIComponent(entry.artist)}`}
+                >
+                  {entry.artist}
+                </a>
+              </span>
             </span>
           </div>
           {entry.notes && entry.notes.length ? (
@@ -98,6 +107,10 @@ const headingId = slugifyHeading(heading);
     display: inline;
     white-space: nowrap;
     margin-left: 0.25rem;
+  }
+
+  .number-one-list__artist-link {
+    color: inherit;
   }
 
   .number-one-list__notes {

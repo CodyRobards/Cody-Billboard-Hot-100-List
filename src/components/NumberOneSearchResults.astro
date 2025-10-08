@@ -24,7 +24,15 @@ const sortedItems = [...items].sort((a, b) => a.year - b.year);
           <div class="number-one-search-results__track">
             <span class="number-one-search-results__title">
               "{entry.title}"
-              <span class="number-one-search-results__artist">by {entry.artist}</span>
+              <span class="number-one-search-results__artist">
+                {" by "}
+                <a
+                  class="number-one-search-results__artist-link"
+                  href={`/search/?q=${encodeURIComponent(entry.artist)}`}
+                >
+                  {entry.artist}
+                </a>
+              </span>
             </span>
           </div>
 
@@ -118,6 +126,10 @@ const sortedItems = [...items].sort((a, b) => a.year - b.year);
     display: inline;
     white-space: nowrap;
     margin-left: 0.25rem;
+  }
+
+  .number-one-search-results__artist-link {
+    color: inherit;
   }
 
   .number-one-search-results__notes {
