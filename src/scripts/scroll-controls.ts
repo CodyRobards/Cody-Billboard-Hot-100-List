@@ -64,9 +64,16 @@ if (hasDOM) {
       const overallSection = overallId ? document.getElementById(overallId) : null;
 
       if (overallSection) {
-        const toggleTopButton = (visible: boolean) => {
-          topButton.hidden = !visible;
-          if (visible) {
+        let hasReachedOverallSection = false;
+
+        const updateVisibility = (overallSectionVisible: boolean) => {
+          if (overallSectionVisible) {
+            hasReachedOverallSection = true;
+          }
+
+          const shouldShow = hasReachedOverallSection;
+          topButton.hidden = !shouldShow;
+          if (shouldShow) {
             topButton.classList.add('is-visible');
           } else {
             topButton.classList.remove('is-visible');
@@ -78,7 +85,7 @@ if (hasDOM) {
             (entries) => {
               const [entry] = entries;
               if (!entry) return;
-              toggleTopButton(entry.isIntersecting);
+              updateVisibility(entry.isIntersecting);
             },
             { threshold: 0.2 }
           );
@@ -87,7 +94,7 @@ if (hasDOM) {
           const onScroll = () => {
             const rect = overallSection.getBoundingClientRect();
             const isVisible = rect.top < window.innerHeight && rect.bottom > 0;
-            toggleTopButton(isVisible);
+            updateVisibility(isVisible);
           };
           window.addEventListener('scroll', onScroll, { passive: true });
           onScroll();
