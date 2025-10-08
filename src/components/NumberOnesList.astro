@@ -11,11 +11,14 @@ interface Props {
   items: NumberOneEntry[];
 }
 
+import { slugifyHeading } from "../lib/slugify";
+
 const { heading, description, items } = Astro.props as Props;
+const headingId = slugifyHeading(heading);
 ---
 
-<section class="article__table number-one-list__section" aria-labelledby={heading}>
-  <u><h2 class="section__title" id={heading}>{heading}</h2></u>
+<section class="article__table number-one-list__section" aria-labelledby={headingId}>
+  <u><h2 class="section__title" id={headingId}>{heading}</h2></u>
   {description ? <p class="section__lead">{description}</p> : null}
   <ol class="number-one-list">
     {
