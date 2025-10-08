@@ -48,6 +48,21 @@ const currentPath = Astro.url.pathname.endsWith("/")
           Liner-note storytelling, instant navigation, and performant delivery inspired by
           McMaster-Carr's catalog experience.
         </p>
+        <form class="site-header__search" action="/search/" method="get" role="search">
+          <label class="visually-hidden" for="site-header-search">Search #1 hits</label>
+          <div class="site-header__search-field">
+            <input
+              id="site-header-search"
+              class="site-header__search-input"
+              type="search"
+              name="q"
+              inputmode="search"
+              placeholder="Search songs, artists, or years"
+              autocomplete="off"
+            />
+            <span class="site-header__search-icon" aria-hidden="true">🔍</span>
+          </div>
+        </form>
       </header>
       <div class="page-layout" id="content-root">
         <aside class="page-layout__nav" aria-label="Primary navigation">

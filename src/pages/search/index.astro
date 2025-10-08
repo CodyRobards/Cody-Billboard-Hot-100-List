@@ -1,10 +1,21 @@
 ---
 import SiteLayout from "../../layouts/SiteLayout.astro";
-import { loadNumberOneSearchIndex } from "../../lib/number-one-search-index";
+import {
+  filterNumberOneSearchRecords,
+  loadNumberOneSearchIndex,
+} from "../../lib/number-one-search-index";
 import numberOneSearchScriptHref from "../../scripts/number-one-search.ts?url";
 
 const results = await loadNumberOneSearchIndex();
 const indexJson = JSON.stringify(results).replace(/</g, "\\u003c");
+const initialQuery = Astro.url.searchParams.get("q")?.trim() ?? "";
+const initialResults = initialQuery ? filterNumberOneSearchRecords(results, initialQuery) : [];
+const initialCountMessage = initialQuery
+  ? initialResults.length
+    ? `${initialResults.length} matching #1 hit${initialResults.length > 1 ? "s" : ""}`
+    : "No #1 hits match your search."
+  : "Loading #1 hits…";
+const showInitialEmptyState = Boolean(initialQuery && initialResults.length === 0);
 ---
 
 <SiteLayout
@@ -44,6 +55,7 @@ const indexJson = JSON.stringify(results).replace(/</g, "\\u003c");
         placeholder="Try Whitney Houston 1986"
         data-number-one-search-input
         aria-describedby="number-one-search-count"
+        value={initialQuery}
       />
     </form>
 
@@ -53,13 +65,61 @@ const indexJson = JSON.stringify(results).replace(/</g, "\\u003c");
       data-number-one-search-count
       aria-live="polite"
     >
-      Loading #1 hits…
+      {initialCountMessage}
     </p>
-    <p class="number-one-search__empty" data-number-one-search-empty aria-live="polite" hidden>
+    <p
+      class="number-one-search__empty"
+      data-number-one-search-empty
+      aria-live="polite"
+      hidden={!showInitialEmptyState}
+    >
       No #1 hits match your search. Try another song title, artist, or year.
     </p>
 
-    <ol class="overall-ranking-list number-one-search-results" data-number-one-search-list></ol>
+    <ol class="number-one-search-results" data-number-one-search-list>
+      {
+        initialResults.map((entry) => {
+          const embedId = `search-${entry.id}`;
+          return (
+            <li class="number-one-search-results__item" data-entry-id={entry.id}>
+              <div class="number-one-search-results__content">
+                <div class="number-one-search-results__header">
+                  <span class="number-one-search-results__year">{entry.year}</span>
+                  <h3 class="number-one-search-results__title">“{entry.title}”</h3>
+                  <p class="number-one-search-results__artist">by {entry.artist}</p>
+                </div>
+                {entry.notes.length ? (
+                  <ul class="number-one-search-results__notes">
+                    {entry.notes.map((note) => (
+                      <li>{note}</li>
+                    ))}
+                  </ul>
+                ) : null}
+                <div class="number-one-search-results__actions">
+                  <a class="number-one-search-results__year-link" href={`/years/${entry.slug}/`}>
+                    View {entry.year} recap
+                  </a>
+                  {entry.spotifyTrackId ? (
+                    <div class="number-one-search-results__spotify">
+                      <button
+                        type="button"
+                        class="overall-ranking-list__spotify-toggle"
+                        data-track-id={entry.spotifyTrackId}
+                        aria-controls={embedId}
+                        aria-expanded="false"
+                      >
+                        Play on Spotify
+                      </button>
+                      <div id={embedId} class="overall-ranking-list__spotify" hidden />
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+            </li>
+          );
+        })
+      }
+    </ol>
 
     <script type="module" defer src={numberOneSearchScriptHref}></script>
   </section>
@@ -70,7 +130,7 @@ const indexJson = JSON.stringify(results).replace(/</g, "\\u003c");
     display: grid;
     gap: 0.5rem;
     margin-top: 1rem;
-    max-width: 28rem;
+    max-width: 32rem;
   }
 
   .number-one-search__label {
@@ -79,26 +139,158 @@ const indexJson = JSON.stringify(results).replace(/</g, "\\u003c");
 
   .number-one-search__input {
     padding: 0.6rem 0.75rem;
-    border: 1px solid var(--color-border, rgba(0, 0, 0, 0.12));
+    border: 1px solid rgba(246, 238, 227, 0.18);
     border-radius: 0.75rem;
     font: inherit;
     color: inherit;
-    background-color: var(--color-surface, #fff);
-    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.08);
+    background-color: rgba(28, 19, 14, 0.65);
+    box-shadow: inset 0 1px 1.5px rgba(0, 0, 0, 0.35);
   }
 
   .number-one-search__input:focus-visible {
-    outline: 3px solid var(--color-accent, rgba(138, 43, 226, 0.4));
+    outline: 3px solid rgba(211, 151, 101, 0.45);
     outline-offset: 2px;
   }
 
   .number-one-search__count,
   .number-one-search__empty {
     margin-top: 0.75rem;
-    color: var(--color-text-muted, rgba(0, 0, 0, 0.65));
+    color: var(--color-muted);
   }
 
   .number-one-search__empty {
     font-style: italic;
+  }
+
+  .number-one-search-results {
+    margin: 1.5rem 0 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 1.35rem;
+  }
+
+  .number-one-search-results__item {
+    border: 1px solid rgba(231, 201, 175, 0.22);
+    border-radius: 1rem;
+    background: rgba(28, 19, 14, 0.85);
+    box-shadow: 0 1rem 2.5rem rgba(0, 0, 0, 0.32);
+    padding: clamp(1.1rem, 2vw, 1.5rem);
+  }
+
+  .number-one-search-results__header {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  .number-one-search-results__year {
+    font-weight: 700;
+    color: var(--color-accent);
+    font-size: clamp(1.05rem, 0.2vw + 1.02rem, 1.2rem);
+  }
+
+  .number-one-search-results__title {
+    margin: 0;
+    font-size: clamp(1.25rem, 0.35vw + 1.2rem, 1.55rem);
+    font-weight: 600;
+    color: var(--color-ink);
+  }
+
+  .number-one-search-results__artist {
+    margin: 0;
+    color: var(--color-muted);
+    font-size: clamp(1.05rem, 0.18vw + 1rem, 1.2rem);
+  }
+
+  .number-one-search-results__notes {
+    margin: clamp(0.75rem, 1vw, 1.1rem) 0 0;
+    padding: 0 0 0 1.25rem;
+    display: grid;
+    gap: 0.5rem;
+    color: var(--color-muted);
+    font-size: clamp(0.95rem, 0.15vw + 0.92rem, 1.05rem);
+  }
+
+  .number-one-search-results__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: clamp(0.85rem, 1.2vw, 1.2rem);
+    align-items: center;
+  }
+
+  .number-one-search-results__year-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem 1rem;
+    border-radius: 999px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--color-paper);
+    background: var(--color-accent);
+    box-shadow: 0 0.75rem 1.5rem rgba(0, 0, 0, 0.35);
+    transition:
+      transform var(--transition-speed) ease,
+      box-shadow var(--transition-speed) ease,
+      background-color var(--transition-speed) ease;
+  }
+
+  .number-one-search-results__year-link:hover,
+  .number-one-search-results__year-link:focus-visible {
+    transform: translateY(-0.15rem);
+    box-shadow: 0 1rem 2rem rgba(0, 0, 0, 0.45);
+    background-color: #e0a871;
+  }
+
+  .number-one-search-results__spotify {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    min-width: 16rem;
+  }
+
+  .overall-ranking-list__spotify-toggle {
+    align-self: flex-start;
+    padding: 0.45rem 0.95rem;
+    border-radius: 999px;
+    border: 1px solid rgba(246, 238, 227, 0.22);
+    background: transparent;
+    color: var(--color-ink);
+    font-weight: 600;
+    cursor: pointer;
+    transition:
+      background-color var(--transition-speed) ease,
+      border-color var(--transition-speed) ease;
+  }
+
+  .overall-ranking-list__spotify-toggle:hover,
+  .overall-ranking-list__spotify-toggle:focus-visible {
+    background: rgba(246, 238, 227, 0.15);
+    border-color: rgba(246, 238, 227, 0.45);
+  }
+
+  .overall-ranking-list__spotify {
+    width: min(100%, 20rem);
+  }
+
+  .overall-ranking-list__spotify iframe {
+    width: 100%;
+    height: 80px;
+    border: 0;
+    border-radius: 0.75rem;
+  }
+
+  @media (max-width: 40rem) {
+    .number-one-search-results__item {
+      padding: 1rem;
+    }
+
+    .number-one-search-results__spotify {
+      min-width: 0;
+      width: 100%;
+    }
   }
 </style>

@@ -334,6 +334,12 @@
     true
   );
 
+  document.addEventListener('submit', (event) => {
+    const form = event.target as HTMLFormElement;
+    if (form?.matches('[data-no-spa]')) return; // let browser handle it normally
+    // existing pushState form handling...
+  });
+
   window.addEventListener('popstate', async (event) => {
     const url = new URL(window.location.href);
     try {

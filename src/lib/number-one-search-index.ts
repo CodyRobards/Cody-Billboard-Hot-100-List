@@ -60,6 +60,19 @@ const buildTokens = (entry: NumberOneSearchRecord): string[] => {
   return Array.from(tokenSet);
 };
 
+export function filterNumberOneSearchRecords(
+  records: NumberOneSearchRecord[],
+  query: string
+): NumberOneSearchRecord[] {
+  const terms = tokenize(query);
+  if (!terms.length) {
+    return [];
+  }
+  return records.filter((record) =>
+    terms.every((term) => record.tokens.some((token) => token.includes(term)))
+  );
+}
+
 export async function loadNumberOneSearchIndex(): Promise<NumberOneSearchRecord[]> {
   const yearEntries = await getCollection('years');
 
@@ -95,6 +108,6 @@ export async function loadNumberOneSearchIndex(): Promise<NumberOneSearchRecord[
     if (a.year === b.year) {
       return a.sequence - b.sequence;
     }
-    return b.year - a.year;
+    return a.year - b.year;
   });
 }
