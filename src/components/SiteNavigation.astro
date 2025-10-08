@@ -32,6 +32,27 @@ const isActive = (href: string) => {
     >
       About
     </a>
+    <a
+      class="site-nav__home"
+      href="/rankings/"
+      aria-current={isActive("/rankings/") ? "page" : undefined}
+    >
+      All rankings
+    </a>
+    <a
+      class="site-nav__home"
+      href="/rankings/top-220/"
+      aria-current={isActive("/rankings/top-220/") ? "page" : undefined}
+    >
+      Top 220
+    </a>
+    <a
+      class="site-nav__home"
+      href="/rankings/bottom-60/"
+      aria-current={isActive("/rankings/bottom-60/") ? "page" : undefined}
+    >
+      Bottom 60
+    </a>
   </div>
   <div class="site-nav__section" aria-label="Years">
     <h2 class="site-nav__heading">Yearly rankings</h2>

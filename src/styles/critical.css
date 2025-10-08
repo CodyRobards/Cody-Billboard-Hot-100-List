@@ -310,15 +310,19 @@ body {
 }
 
 .site-nav__intro {
-  display: flex;
+  display: grid;
   gap: 0.5rem;
-  flex-wrap: wrap;
+  width: 100%;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
 }
 
 .site-nav__home {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
+  justify-content: center;
+  text-align: center;
+  width: 100%;
   font-size: var(--scale--1);
   font-weight: 600;
   text-decoration: none;
