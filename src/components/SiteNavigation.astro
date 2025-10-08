@@ -1,5 +1,6 @@
 ---
 import type { YearEntry } from "../lib/content-utils";
+import { groupYearsByDecade } from "../lib/content-utils";
 
 interface Props {
   years: Record<number, YearEntry[]>;
@@ -8,16 +9,45 @@ interface Props {
 
 const { years, currentPath } = Astro.props as Props;
 
-const yearKeys = Object.keys(years)
-  .map((key) => Number(key))
-  .sort((a, b) => a - b);
-
 const ensureTrailingSlash = (href: string) => (href.endsWith("/") ? href : `${href}/`);
 
 const isActive = (href: string) => {
   const normalizedHref = ensureTrailingSlash(href);
   return currentPath === normalizedHref || currentPath.startsWith(normalizedHref);
 };
+
+const decadeBuckets = groupYearsByDecade(years)
+  .map((bucket) => {
+    const items = bucket.years
+      .map(({ year, entries }) => {
+        const [primaryEntry] = entries ?? [];
+        if (!primaryEntry) return null;
+        const href = ensureTrailingSlash(`/years/${primaryEntry.slug}`);
+        return {
+          year,
+          href,
+          isActive: isActive(href),
+        };
+      })
+      .filter(
+        (
+          item
+        ): item is {
+          year: number;
+          href: string;
+          isActive: boolean;
+        } => Boolean(item)
+      );
+
+    const isCurrent = items.some((item) => item.isActive);
+
+    return {
+      decade: bucket.decade,
+      items,
+      isCurrent,
+    };
+  })
+  .filter((bucket) => bucket.items.length > 0);
 ---
 
 <nav class="site-nav" aria-label="Archive navigation">
@@ -56,22 +86,28 @@ const isActive = (href: string) => {
   </div>
   <div class="site-nav__section" aria-label="Years">
     <h2 class="site-nav__heading">Yearly rankings</h2>
-    <ul class="site-nav__year-list">
+    <ul class="site-nav__decade-list">
       {
-        yearKeys.map((year) => {
-          const [primaryEntry] = years[year] ?? [];
-          if (!primaryEntry) return null;
-          const href = ensureTrailingSlash(`/years/${primaryEntry.slug}`);
-
+        decadeBuckets.map((bucket) => {
+          const headingId = `decade-${bucket.decade}`;
           return (
-            <li class={`site-nav__year-item ${isActive(href) ? "is-current" : ""}`}>
-              <a
-                class="site-nav__year-link"
-                href={href}
-                aria-current={isActive(href) ? "page" : undefined}
-              >
-                {year}
-              </a>
+            <li class={`site-nav__decade ${bucket.isCurrent ? "is-current" : ""}`}>
+              <h3 class="site-nav__decade-heading" id={headingId}>
+                {bucket.decade}s
+              </h3>
+              <ul class="site-nav__year-list" aria-labelledby={headingId}>
+                {bucket.items.map((item) => (
+                  <li class={`site-nav__year-item ${item.isActive ? "is-current" : ""}`}>
+                    <a
+                      class="site-nav__year-link"
+                      href={item.href}
+                      aria-current={item.isActive ? "page" : undefined}
+                    >
+                      {item.year}
+                    </a>
+                  </li>
+                ))}
+              </ul>
             </li>
           );
         })

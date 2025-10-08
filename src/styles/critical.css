@@ -358,14 +358,44 @@ body {
   margin: 0 0 0.35rem;
 }
 
+.site-nav__decade-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.site-nav__decade {
+  margin: 0;
+  padding: 0;
+}
+
+.site-nav__decade:not(:first-child) {
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--color-rule-soft);
+}
+
+.site-nav__decade-heading {
+  font-size: var(--scale--1);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin: 0 0 0.5rem;
+  color: var(--color-muted);
+}
+
+.site-nav__decade.is-current .site-nav__decade-heading {
+  color: var(--color-ink);
+}
+
 .site-nav__year-list {
   list-style: none;
   margin: 0;
   padding: 0.15rem 0;
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 0.25rem 0.4rem;
-  justify-items: center;
+  gap: 0.35rem 0.45rem;
+  grid-template-columns: repeat(auto-fit, minmax(4.25rem, 1fr));
 }
 
 .site-nav__year-item {
@@ -883,13 +913,17 @@ a:focus-visible {
 
 @media (max-width: 1600px) {
   .site-nav__year-list {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(3.75rem, 1fr));
   }
 }
 
 @media (max-width: 640px) {
+  .site-nav__decade-list {
+    gap: 0.65rem;
+  }
+
   .site-nav__year-list {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(auto-fit, minmax(3.25rem, 1fr));
   }
 }
 

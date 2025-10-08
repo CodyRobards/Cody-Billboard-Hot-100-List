@@ -186,7 +186,12 @@ vi.mock('astro:content', () => ({
   getCollection: (collection: string) => getCollectionMock(collection),
 }));
 
-import { getYearGroups, getYearSlugIndex, getRankingSlugIndex } from './content-utils';
+import {
+  getYearGroups,
+  getYearSlugIndex,
+  getRankingSlugIndex,
+  groupYearsByDecade,
+} from './content-utils';
 
 beforeEach(() => {
   getCollectionMock.mockClear();
@@ -197,6 +202,15 @@ describe('content-utils grouping helpers', () => {
     const groups = await getYearGroups();
     expect(Object.keys(groups).sort()).toEqual(['1999', '2000']);
     expect(groups[1999].map((entry) => entry.data.ranking)).toEqual([1, 7]);
+  });
+
+  it('organizes grouped years into decade buckets', async () => {
+    const groups = await getYearGroups();
+    const decades = groupYearsByDecade(groups);
+
+    expect(decades.map((bucket) => bucket.decade)).toEqual([1990, 2000]);
+    expect(decades[0].years.map((year) => year.year)).toEqual([1999]);
+    expect(decades[1].years.map((year) => year.year)).toEqual([2000]);
   });
 });
 

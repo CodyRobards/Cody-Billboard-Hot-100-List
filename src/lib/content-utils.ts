@@ -3,7 +3,12 @@ import { getCollection, type CollectionEntry } from 'astro:content';
 export type YearEntry = CollectionEntry<'years'>;
 export type RankingEntry = CollectionEntry<'rankings'>;
 
-type YearGroups = Record<number, YearEntry[]>;
+export type YearGroups = Record<number, YearEntry[]>;
+
+export interface DecadeBucket {
+  decade: number;
+  years: { year: number; entries: YearEntry[] }[];
+}
 
 const byAscendingRanking = <T extends { data: { ranking: number } }>(a: T, b: T) =>
   a.data.ranking - b.data.ranking;
@@ -34,6 +39,30 @@ export async function getYearGroups(): Promise<YearGroups> {
   }
 
   return groups;
+}
+
+export function groupYearsByDecade(groups: YearGroups): DecadeBucket[] {
+  const orderedYears = Object.keys(groups)
+    .map((year) => Number(year))
+    .sort((a, b) => a - b);
+
+  const decadeMap = new Map<number, { year: number; entries: YearEntry[] }[]>();
+
+  for (const year of orderedYears) {
+    const entries = groups[year];
+    if (!entries || entries.length === 0) continue;
+    const decade = Math.floor(year / 10) * 10;
+    const bucket = decadeMap.get(decade) ?? [];
+    bucket.push({ year, entries });
+    decadeMap.set(decade, bucket);
+  }
+
+  return Array.from(decadeMap.entries())
+    .sort((a, b) => a[0] - b[0])
+    .map(([decade, years]) => ({
+      decade,
+      years: years.sort((a, b) => a.year - b.year),
+    }));
 }
 
 /**
