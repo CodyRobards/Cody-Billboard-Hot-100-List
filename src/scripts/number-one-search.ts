@@ -201,12 +201,19 @@
       });
     }
 
-    const initialQueryValue = input.value.trim();
-    if (initialQueryValue) {
-      updateUI(initialQueryValue, index);
+    const urlQuery = new URLSearchParams(window.location.search).get('q')?.trim() ?? '';
+
+    if (urlQuery) {
+      input.value = urlQuery;
+      updateUI(urlQuery, index);
     } else {
-      list.innerHTML = '';
-      if (empty) empty.hidden = true;
+      const initialQueryValue = input.value.trim();
+      if (initialQueryValue) {
+        updateUI(initialQueryValue, index);
+      } else {
+        list.innerHTML = '';
+        if (empty) empty.hidden = true;
+      }
     }
 
     /* ------------------- Fade-In Visibility (Option 2) ------------------- */
