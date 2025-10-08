@@ -1,5 +1,7 @@
-const BUTTON_SELECTOR = '.jump-to-overall';
-const TOP_BUTTON_SELECTOR = '.jump-to-top';
+const CONTROL_SELECTOR = '.jump-control';
+const BUTTON_SELECTOR = '.jump-control__button';
+const ICON_SELECTOR = '.jump-control__icon';
+const LABEL_SELECTOR = '.jump-control__label';
 
 const hasDOM = typeof window !== 'undefined' && typeof document !== 'undefined';
 
@@ -42,90 +44,106 @@ export function initializeScrollControls() {
     }
   };
 
-  const overallButton = document.querySelector<HTMLAnchorElement>(BUTTON_SELECTOR);
-  const topButton = document.querySelector<HTMLAnchorElement>(TOP_BUTTON_SELECTOR);
+  const container = document.querySelector<HTMLDivElement>(CONTROL_SELECTOR);
+  const button = container?.querySelector<HTMLButtonElement>(BUTTON_SELECTOR);
+  const icon = container?.querySelector<HTMLElement>(ICON_SELECTOR);
+  const label = container?.querySelector<HTMLElement>(LABEL_SELECTOR);
 
-  if (topButton) {
-    topButton.hidden = true;
-    topButton.classList.remove('is-visible');
+  if (!container || !button || !icon || !label) {
+    return;
   }
 
-  if (overallButton) {
-    const handleOverallClick = (event: MouseEvent) => {
-      const href = overallButton.getAttribute('href');
-      if (!href || !href.startsWith('#')) {
+  const overallId = container.dataset.overallId || '';
+  const overallSection = overallId ? document.getElementById(overallId) : null;
+
+  if (!overallSection) {
+    container.hidden = true;
+    return;
+  }
+
+  container.hidden = false;
+
+  type ControlState = 'down' | 'top';
+
+  let currentState: ControlState = container.dataset.state === 'top' ? 'top' : 'down';
+
+  const setState = (state: ControlState) => {
+    container.dataset.state = state;
+    button.dataset.state = state;
+    if (state === currentState) {
+      return;
+    }
+    currentState = state;
+
+    if (state === 'down') {
+      icon.textContent = '▼';
+      const message = 'Jump to overall rankings';
+      label.textContent = message;
+      button.setAttribute('aria-label', message);
+    } else {
+      icon.textContent = '▲';
+      const message = 'Back to top';
+      label.textContent = message;
+      button.setAttribute('aria-label', message);
+    }
+  };
+
+  const scrollToTop = () => {
+    const behavior = getScrollBehavior();
+    if (typeof window.scrollTo === 'function') {
+      window.scrollTo({ top: 0, behavior });
+    } else {
+      window.scroll(0, 0);
+    }
+  };
+
+  const handleClick = (event: MouseEvent) => {
+    event.preventDefault();
+    if (currentState === 'down') {
+      scrollToId(overallId);
+      updateHash(overallId);
+    } else {
+      scrollToTop();
+      updateHash(null);
+    }
+  };
+
+  button.addEventListener('click', handleClick);
+  cleanupFns.push(() => button.removeEventListener('click', handleClick));
+
+  const evaluateState = (rect: DOMRect) => {
+    const isAboveViewport = rect.top < 0;
+    const isIntersecting = rect.top < window.innerHeight && rect.bottom > 0;
+    const nextState: ControlState = isAboveViewport || isIntersecting ? 'top' : 'down';
+    setState(nextState);
+  };
+
+  if ('IntersectionObserver' in window) {
+    const observer = new IntersectionObserver((entries) => {
+      const [entry] = entries;
+      if (!entry) return;
+      const { boundingClientRect, isIntersecting } = entry;
+      if (isIntersecting) {
+        setState('top');
         return;
       }
-      event.preventDefault();
-      const targetId = href.substring(1);
-      scrollToId(targetId);
-      updateHash(targetId);
+      evaluateState(boundingClientRect);
+    });
+    observer.observe(overallSection);
+    cleanupFns.push(() => observer.disconnect());
+  } else {
+    const onScroll = () => {
+      evaluateState(overallSection.getBoundingClientRect());
     };
-
-    overallButton.addEventListener('click', handleOverallClick);
-    cleanupFns.push(() => overallButton.removeEventListener('click', handleOverallClick));
+    window.addEventListener('scroll', onScroll, { passive: true });
+    cleanupFns.push(() => window.removeEventListener('scroll', onScroll));
+    onScroll();
   }
 
-  if (topButton) {
-    const targetId = topButton.getAttribute('data-target');
+  evaluateState(overallSection.getBoundingClientRect());
 
-    const handleTopClick = (event: MouseEvent) => {
-      event.preventDefault();
-      const resolvedTarget = targetId || 'page-main';
-      scrollToId(resolvedTarget);
-      updateHash(null);
-    };
-
-    topButton.addEventListener('click', handleTopClick);
-    cleanupFns.push(() => topButton.removeEventListener('click', handleTopClick));
-  }
-
-  if (overallButton && topButton) {
-    const targetId = overallButton.getAttribute('href');
-    const overallId = targetId && targetId.startsWith('#') ? targetId.substring(1) : null;
-    const overallSection = overallId ? document.getElementById(overallId) : null;
-
-    if (overallSection) {
-      let hasReachedOverallSection = false;
-      const updateVisibility = (overallSectionVisible: boolean) => {
-        if (overallSectionVisible) {
-          hasReachedOverallSection = true;
-        }
-
-        const shouldShow = hasReachedOverallSection;
-        topButton.hidden = !shouldShow;
-        if (shouldShow) {
-          topButton.classList.add('is-visible');
-        } else {
-          topButton.classList.remove('is-visible');
-        }
-      };
-
-      updateVisibility(false);
-
-      if ('IntersectionObserver' in window) {
-        const observer = new IntersectionObserver(
-          (entries) => {
-            const [entry] = entries;
-            if (!entry) return;
-            updateVisibility(entry.isIntersecting);
-          },
-          { threshold: 0.2 }
-        );
-        observer.observe(overallSection);
-        cleanupFns.push(() => observer.disconnect());
-      } else {
-        const onScroll = () => {
-          const rect = overallSection.getBoundingClientRect();
-          const isVisible = rect.top < window.innerHeight && rect.bottom > 0;
-          updateVisibility(isVisible);
-        };
-        window.addEventListener('scroll', onScroll, { passive: true });
-        cleanupFns.push(() => window.removeEventListener('scroll', onScroll));
-        onScroll();
-      }
-    }
-  }
+  // Ensure initial label/aria state is in sync with layout.
+  setState(currentState);
 
   cleanupScrollControls = () => {
     cleanupFns.forEach((fn) => fn());
