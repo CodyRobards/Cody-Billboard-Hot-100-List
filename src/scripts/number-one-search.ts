@@ -39,6 +39,13 @@
   const count = document.querySelector<HTMLElement>('[data-number-one-search-count]');
   const container = document.querySelector<HTMLElement>('[data-number-one-search-index-json]');
   const form = document.querySelector<HTMLFormElement>('[data-number-one-search-form]');
+  const clearButtons = Array.from(
+    document.querySelectorAll<HTMLButtonElement>('[data-number-one-search-clear]')
+  );
+  const triggerButtons = Array.from(
+    document.querySelectorAll<HTMLButtonElement>('[data-number-one-search-trigger]')
+  );
+  const defaultCountMessage = 'Type to search for #1 hits…';
 
   if (!list || !input) return;
 
@@ -179,7 +186,7 @@
       return;
     }
 
-    if (count) count.textContent = 'Type to search for #1 hits…';
+    if (count) count.textContent = defaultCountMessage;
 
     const handleInput = (event: Event) => updateUI((event.target as HTMLInputElement).value, index);
 
@@ -188,6 +195,28 @@
     form?.addEventListener('submit', (event) => {
       event.preventDefault();
       updateUI(input.value, index);
+    });
+
+    triggerButtons.forEach((button) => {
+      button.addEventListener('click', (event) => {
+        event.preventDefault();
+        updateUI(input.value, index);
+      });
+    });
+
+    const resetSearch = () => {
+      input.value = '';
+      list.innerHTML = '';
+      if (empty) empty.hidden = true;
+      if (count) count.textContent = defaultCountMessage;
+      input.focus();
+    };
+
+    clearButtons.forEach((button) => {
+      button.addEventListener('click', (event) => {
+        event.preventDefault();
+        resetSearch();
+      });
     });
 
     // Optional: prefetch JSON after idle time for smoother future loads
@@ -213,6 +242,7 @@
       } else {
         list.innerHTML = '';
         if (empty) empty.hidden = true;
+        if (count) count.textContent = defaultCountMessage;
       }
     }
 

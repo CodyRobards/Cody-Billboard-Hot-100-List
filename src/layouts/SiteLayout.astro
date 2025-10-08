@@ -60,7 +60,22 @@ const currentPath = Astro.url.pathname.endsWith("/")
               placeholder="Search songs, artists, or years"
               autocomplete="off"
             />
-            <span class="site-header__search-icon" aria-hidden="true">🔍</span>
+            <div class="site-header__search-controls">
+              <button
+                type="reset"
+                class="site-header__search-button site-header__search-button--clear"
+                aria-label="Clear site search"
+              >
+                <span aria-hidden="true">🞪</span>
+              </button>
+              <button
+                type="submit"
+                class="site-header__search-button site-header__search-button--submit"
+                aria-label="Submit site search"
+              >
+                <span aria-hidden="true">🔍</span>
+              </button>
+            </div>
           </div>
         </form>
       </header>
