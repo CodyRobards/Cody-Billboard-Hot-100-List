@@ -1,15 +1,12 @@
 (() => {
   const hasDOM = typeof window !== 'undefined' && typeof document !== 'undefined';
-  if (!hasDOM || !('fetch' in window) || !('history' in window)) {
-    return;
-  }
+  if (!hasDOM || !('fetch' in window) || !('history' in window)) return;
 
+  // Respect "Save-Data" or "prefers-reduced-data"
   const reduceDataPreference = (() => {
     if (typeof navigator !== 'undefined') {
       const nav = navigator as Navigator & { connection?: { saveData?: boolean } };
-      if (nav.connection?.saveData) {
-        return true;
-      }
+      if (nav.connection?.saveData) return true;
     }
     if (typeof window.matchMedia === 'function') {
       try {
@@ -21,14 +18,10 @@
     return false;
   })();
 
-  if (reduceDataPreference) {
-    return;
-  }
+  if (reduceDataPreference) return;
 
   const contentRoot = document.querySelector<HTMLElement>('#content-root');
-  if (!contentRoot) {
-    return;
-  }
+  if (!contentRoot) return;
   const contentRootEl: HTMLElement = contentRoot;
 
   interface SerializedHeadNode {
@@ -46,6 +39,11 @@
   const managedAttribute = 'data-prefetch-managed';
   const managedKeyAttribute = 'data-prefetch-managed-key';
 
+  // 🔹 Helper: paths that should always trigger a full reload
+  function shouldForceReloadPath(path: string): boolean {
+    return ['/search', '/interactive-demo', '/experiments'].some((p) => path.startsWith(p));
+  }
+
   function isSameDocumentNavigation(url: URL): boolean {
     return url.pathname === window.location.pathname && url.search === window.location.search;
   }
@@ -58,22 +56,16 @@
   }
 
   function serializeElement(element: Element): SerializedHeadNode | null {
-    if (!(element instanceof HTMLStyleElement || element instanceof HTMLLinkElement)) {
-      return null;
-    }
+    if (!(element instanceof HTMLStyleElement || element instanceof HTMLLinkElement)) return null;
 
     if (element instanceof HTMLLinkElement) {
       const rel = element.getAttribute('rel');
-      if (!rel || !rel.toLowerCase().split(/\s+/).includes('stylesheet')) {
-        return null;
-      }
+      if (!rel || !rel.toLowerCase().split(/\s+/).includes('stylesheet')) return null;
     }
 
     const attributes: Record<string, string> = {};
     for (const { name, value } of Array.from(element.attributes)) {
-      if (name === managedAttribute || name === managedKeyAttribute) {
-        continue;
-      }
+      if (name === managedAttribute || name === managedKeyAttribute) continue;
       attributes[name] = value;
     }
 
@@ -85,23 +77,16 @@
       };
     }
 
-    return {
-      tagName: 'LINK',
-      attributes,
-    };
+    return { tagName: 'LINK', attributes };
   }
 
   function serializeHeadNodesFromDocument(doc: Document): SerializedHeadNode[] {
     const nodes: SerializedHeadNode[] = [];
-    const elements = doc.head?.querySelectorAll('style, link[rel~="stylesheet"]');
-    if (!elements) {
-      return nodes;
-    }
+    const elements = doc.head?.querySelectorAll("style, link[rel~='stylesheet']");
+    if (!elements) return nodes;
     elements.forEach((element) => {
       const serialized = serializeElement(element);
-      if (serialized) {
-        nodes.push(serialized);
-      }
+      if (serialized) nodes.push(serialized);
     });
     return nodes;
   }
@@ -115,15 +100,11 @@
   }
 
   function ensureManagedAttributes() {
-    const elements = document.head?.querySelectorAll('style, link[rel~="stylesheet"]');
-    if (!elements) {
-      return;
-    }
+    const elements = document.head?.querySelectorAll("style, link[rel~='stylesheet']");
+    if (!elements) return;
     elements.forEach((element) => {
       const serialized = serializeElement(element);
-      if (!serialized) {
-        return;
-      }
+      if (!serialized) return;
       element.setAttribute(managedAttribute, 'true');
       element.setAttribute(managedKeyAttribute, getHeadNodeKey(serialized));
     });
@@ -132,14 +113,10 @@
   function getManagedHeadNodes(): SerializedHeadNode[] {
     const nodes: SerializedHeadNode[] = [];
     const elements = document.head?.querySelectorAll(`[${managedAttribute}]`);
-    if (!elements) {
-      return nodes;
-    }
+    if (!elements) return nodes;
     elements.forEach((element) => {
       const serialized = serializeElement(element);
-      if (serialized) {
-        nodes.push(serialized);
-      }
+      if (serialized) nodes.push(serialized);
     });
     return nodes;
   }
@@ -166,9 +143,7 @@
     );
     managedElements.forEach((element) => {
       const key = element.getAttribute(managedKeyAttribute);
-      if (!key || !desiredKeys.has(key)) {
-        element.remove();
-      }
+      if (!key || !desiredKeys.has(key)) element.remove();
     });
 
     const fragment = document.createDocumentFragment();
@@ -218,49 +193,31 @@
 
   function getAnchorFromEvent(target: EventTarget | null): HTMLAnchorElement | null {
     let el = target as HTMLElement | null;
-    while (el && !(el instanceof HTMLAnchorElement)) {
-      el = el.parentElement;
-    }
-    if (!el || !(el instanceof HTMLAnchorElement)) {
-      return null;
-    }
+    while (el && !(el instanceof HTMLAnchorElement)) el = el.parentElement;
+    if (!el || !(el instanceof HTMLAnchorElement)) return null;
     const anchor = el;
-    if (!anchor.href) {
-      return null;
-    }
-    if (anchor.target && anchor.target !== '_self') {
-      return null;
-    }
-    if (anchor.hasAttribute('download') || anchor.getAttribute('rel') === 'external') {
-      return null;
-    }
+    if (!anchor.href) return null;
+    if (anchor.target && anchor.target !== '_self') return null;
+    if (anchor.hasAttribute('download') || anchor.getAttribute('rel') === 'external') return null;
     return anchor;
   }
 
   async function fetchAndCache(url: URL): Promise<PageEntry> {
     const href = url.href;
-    if (cache.has(href)) {
-      return cache.get(href)!;
-    }
-    if (inflight.has(href)) {
-      return inflight.get(href)!;
-    }
+    if (cache.has(href)) return cache.get(href)!;
+    if (inflight.has(href)) return inflight.get(href)!;
 
     const request = fetch(href, {
       credentials: 'same-origin',
       headers: { 'X-Requested-With': 'prefetch-navigation' },
     })
       .then(async (response) => {
-        if (!response.ok) {
-          throw new Error(`Failed to fetch: ${response.status}`);
-        }
+        if (!response.ok) throw new Error(`Failed to fetch: ${response.status}`);
         const html = await response.text();
         const parser = new DOMParser();
         const doc = parser.parseFromString(html, 'text/html');
         const nextContent = doc.querySelector<HTMLElement>('#content-root');
-        if (!nextContent) {
-          throw new Error('Missing content root in response');
-        }
+        if (!nextContent) throw new Error('Missing content root in response');
         const title = doc.title || document.title;
         const entry: PageEntry = {
           html: nextContent.innerHTML,
@@ -270,9 +227,7 @@
         cache.set(href, entry);
         return entry;
       })
-      .finally(() => {
-        inflight.delete(href);
-      });
+      .finally(() => inflight.delete(href));
 
     inflight.set(href, request);
     return request;
@@ -294,7 +249,7 @@
     try {
       await fetchAndCache(url);
     } catch {
-      // Prefetch errors are non-fatal; allow full navigation fallback.
+      // Prefetch errors are non-fatal
     }
   }
 
@@ -309,9 +264,7 @@
 
     document.dispatchEvent(
       new CustomEvent('prefetch:navigated', {
-        detail: {
-          url: url.href,
-        },
+        detail: { url: url.href },
       })
     );
 
@@ -347,19 +300,11 @@
 
   function handleIntent(event: Event) {
     const anchor = getAnchorFromEvent(event.target);
-    if (!anchor) {
-      return;
-    }
+    if (!anchor) return;
     const url = new URL(anchor.href, window.location.href);
-    if (url.origin !== window.location.origin) {
-      return;
-    }
-    if (isSameDocumentNavigation(url)) {
-      return;
-    }
-    if (url.href === currentUrl) {
-      return;
-    }
+    if (url.origin !== window.location.origin) return;
+    if (isSameDocumentNavigation(url)) return;
+    if (url.href === currentUrl) return;
     prefetch(url);
   }
 
@@ -367,28 +312,21 @@
   document.addEventListener('focusin', handleIntent);
   document.addEventListener('touchstart', handleIntent, { passive: true });
 
+  // 🔹 Updated click handler
   document.addEventListener(
     'click',
     (event) => {
       const anchor = getAnchorFromEvent(event.target);
-      if (!anchor) {
-        return;
-      }
-
-      if (isModifyingClick(event)) {
-        return;
-      }
+      if (!anchor) return;
+      if (isModifyingClick(event)) return;
 
       const url = new URL(anchor.href, window.location.href);
-      if (url.origin !== window.location.origin) {
-        return;
-      }
-      if (isSameDocumentNavigation(url)) {
-        return;
-      }
-      if (url.href === currentUrl) {
-        return;
-      }
+      if (url.origin !== window.location.origin) return;
+      if (isSameDocumentNavigation(url)) return;
+      if (url.href === currentUrl) return;
+
+      // ✅ Skip SPA swap for excluded pages or explicit reload links
+      if (shouldForceReloadPath(url.pathname) || anchor.hasAttribute('data-reload')) return;
 
       event.preventDefault();
       navigateTo(url);

@@ -9,39 +9,39 @@ const hasDOM = typeof window !== 'undefined' && typeof document !== 'undefined';
 if (hasDOM) {
   const globalScope = window as typeof window & Record<string, unknown>;
   if (globalScope[INITIALIZED_FLAG]) {
-    // Avoid registering duplicate listeners when the script is executed again.
+    // prevent duplicate init
   } else {
     globalScope[INITIALIZED_FLAG] = true;
 
     const getContainer = (button: HTMLButtonElement): HTMLElement | null => {
-      const targetId = button.getAttribute('aria-controls');
-      if (!targetId) return null;
-      const container = document.getElementById(targetId);
-      return container instanceof HTMLElement ? container : null;
+      const id = button.getAttribute('aria-controls');
+      return id ? (document.getElementById(id) as HTMLElement | null) : null;
     };
 
     const createIframe = (trackId: string): HTMLIFrameElement => {
       const iframe = document.createElement('iframe');
       const src = new URL(`https://open.spotify.com/embed/track/${trackId}`);
+      // autoplay param is ignored by Spotify; playback triggered below
       src.searchParams.set('utm_source', 'oembed');
-      src.searchParams.set('autoplay', '1');
       iframe.src = src.toString();
-      iframe.loading = 'lazy';
       iframe.allow = IFRAME_ALLOW;
+      iframe.loading = 'lazy';
       iframe.title = 'Spotify player';
-      iframe.setAttribute('allowtransparency', 'true');
       iframe.width = '100%';
       iframe.height = '80';
-      iframe.style.minHeight = '80px';
-      iframe.style.maxHeight = '80px';
       iframe.style.border = '0';
       iframe.style.borderRadius = '12px';
+
+      // Once loaded, immediately tell Spotify to play
       iframe.addEventListener('load', () => {
-        try {
-          iframe.contentWindow?.postMessage({ command: 'play' }, '*');
-        } catch {
-          // Ignore playback errors; Spotify will fall back to manual play.
-        }
+        // wait a short beat so iframe JS is ready
+        setTimeout(() => {
+          try {
+            iframe.contentWindow?.postMessage({ type: 'play' }, 'https://open.spotify.com');
+          } catch {
+            /* fallback: user can hit play manually */
+          }
+        }, 400);
       });
       return iframe;
     };
@@ -55,51 +55,37 @@ if (hasDOM) {
       button.textContent = SHOW_LABEL;
     };
 
-    const closeOtherWidgets = (currentButton: HTMLButtonElement) => {
-      const openButtons = document.querySelectorAll<HTMLButtonElement>(
-        `${BUTTON_SELECTOR}[aria-expanded="true"]`
-      );
-      openButtons.forEach((otherButton) => {
-        if (otherButton === currentButton) {
-          return;
-        }
-        closeButton(otherButton);
-      });
+    const closeOtherWidgets = (current: HTMLButtonElement) => {
+      document
+        .querySelectorAll<HTMLButtonElement>(`${BUTTON_SELECTOR}[aria-expanded="true"]`)
+        .forEach((btn) => {
+          if (btn !== current) closeButton(btn);
+        });
     };
 
     document.addEventListener('click', (event) => {
-      const target = event.target;
-      if (!(target instanceof Element)) {
-        return;
-      }
-
-      const button = target.closest<HTMLButtonElement>(BUTTON_SELECTOR);
-      if (!button) {
-        return;
-      }
+      const target = event.target as Element | null;
+      const button = target?.closest<HTMLButtonElement>(BUTTON_SELECTOR);
+      if (!button) return;
 
       const trackId = button.dataset.trackId;
-      if (!trackId) {
-        return;
-      }
-
       const container = getContainer(button);
-      if (!container) {
-        return;
-      }
+      if (!trackId || !container) return;
 
-      const isExpanded = button.getAttribute('aria-expanded') === 'true';
-
-      if (isExpanded) {
+      const isOpen = button.getAttribute('aria-expanded') === 'true';
+      if (isOpen) {
         closeButton(button);
         return;
       }
 
       closeOtherWidgets(button);
 
-      container.innerHTML = '';
+      // open + autoplay
       container.hidden = false;
-      container.append(createIframe(trackId));
+      container.innerHTML = '';
+      const iframe = createIframe(trackId);
+      container.append(iframe);
+
       button.setAttribute('aria-expanded', 'true');
       button.textContent = HIDE_LABEL;
     });

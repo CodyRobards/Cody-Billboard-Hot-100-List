@@ -1,6 +1,5 @@
 ---
 import SiteLayout from "../../layouts/SiteLayout.astro";
-import NumberOneSearchResults from "../../components/NumberOneSearchResults.astro";
 import { loadNumberOneSearchIndex } from "../../lib/number-one-search-index";
 import numberOneSearchScriptHref from "../../scripts/number-one-search.ts?url";
 
@@ -60,7 +59,7 @@ const indexJson = JSON.stringify(results).replace(/</g, "\\u003c");
       No #1 hits match your search. Try another song title, artist, or year.
     </p>
 
-    <NumberOneSearchResults items={results} />
+    <ol class="overall-ranking-list number-one-search-results" data-number-one-search-list></ol>
 
     <script type="module" defer src={numberOneSearchScriptHref}></script>
   </section>

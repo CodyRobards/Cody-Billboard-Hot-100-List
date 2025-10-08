@@ -1,170 +1,195 @@
-interface NumberOneSearchRecord {
-  id: string;
-  tokens: string[];
-}
+/**
+ * Billboard Hot 100 Archive – Client-Side Search (Progressive + Fade-In)
+ * ----------------------------------------------------------------------
+ * - Loads search index from inline data, sessionStorage, or JSON file
+ * - Dynamically renders results when searched
+ * - Fades in list once initialized
+ */
 
-const hasDOM = typeof window !== 'undefined' && typeof document !== 'undefined';
+(() => {
+  interface NumberOneSearchRecord {
+    id: string;
+    title: string;
+    artist: string;
+    year: number;
+    slug: string;
+    notes?: string[];
+    spotifyTrackId?: string;
+    yearRanking?: number;
+    sequence?: number;
+    tokens: string[];
+  }
 
-const normalize = (value: string) =>
-  value
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase();
+  const normalize = (value: string): string =>
+    value
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase();
 
-const tokenize = (value: string): string[] =>
-  normalize(value)
-    .split(/[^a-z0-9]+/i)
-    .map((token) => token.trim())
-    .filter((token) => token.length > 0);
+  const tokenize = (value: string): string[] =>
+    normalize(value)
+      .split(/[^a-z0-9]+/i)
+      .filter(Boolean);
 
-if (hasDOM) {
-  const form = document.querySelector<HTMLFormElement>('[data-number-one-search-form]');
-  const input = document.querySelector<HTMLInputElement>('[data-number-one-search-input]');
+  /* ----------------------------- DOM Elements ----------------------------- */
+
   const list = document.querySelector<HTMLElement>('[data-number-one-search-list]');
-  const emptyState = document.querySelector<HTMLElement>('[data-number-one-search-empty]');
-  const countElement = document.querySelector<HTMLElement>('[data-number-one-search-count]');
+  const input = document.querySelector<HTMLInputElement>('[data-number-one-search-input]');
+  const empty = document.querySelector<HTMLElement>('[data-number-one-search-empty]');
+  const count = document.querySelector<HTMLElement>('[data-number-one-search-count]');
+  const container = document.querySelector<HTMLElement>('[data-number-one-search-index-json]');
 
-  if (!form || !input || !list) {
-    // The search UI is not present on the current page.
-  } else {
-    const getIndexPayload = (): string | null => {
-      const script = document.querySelector<HTMLScriptElement>(
-        'script[data-number-one-search-index]'
-      );
-      const scriptPayload = script?.textContent?.trim();
-      if (scriptPayload) {
-        return scriptPayload;
+  if (!list || !input) return;
+
+  /* ------------------------- Load Search Index ---------------------------- */
+
+  const loadIndex = async (): Promise<NumberOneSearchRecord[]> => {
+    // 1. Check sessionStorage cache
+    const cached = sessionStorage.getItem('number-one-search-index');
+    if (cached) {
+      try {
+        return JSON.parse(cached) as NumberOneSearchRecord[];
+      } catch {
+        sessionStorage.removeItem('number-one-search-index');
       }
+    }
 
-      const container = document.querySelector<HTMLElement>('[data-number-one-search-index-json]');
-      if (container) {
-        const attrValue = container.getAttribute('data-number-one-search-index-json');
-        if (attrValue && attrValue.trim().length > 0) {
-          return attrValue;
+    // 2. Try inline data from Astro
+    const payload = container?.getAttribute('data-number-one-search-index-json');
+    if (payload) {
+      try {
+        const data = JSON.parse(payload) as NumberOneSearchRecord[];
+        sessionStorage.setItem('number-one-search-index', JSON.stringify(data));
+        return data;
+      } catch (err) {
+        console.error('Failed to parse embedded search index:', err);
+      }
+    }
+
+    // 3. Progressive load from JSON file
+    try {
+      const res = await fetch('/number-one-search-index.json', { cache: 'force-cache' });
+      if (!res.ok) throw new Error(`Request failed: ${res.status}`);
+      const data = (await res.json()) as NumberOneSearchRecord[];
+      sessionStorage.setItem('number-one-search-index', JSON.stringify(data));
+      return data;
+    } catch (err) {
+      console.error('❌ Could not load search index:', err);
+      return [];
+    }
+  };
+
+  /* --------------------------- Rendering Logic ---------------------------- */
+
+  const createResultItem = (entry: NumberOneSearchRecord): HTMLLIElement => {
+    const li = document.createElement('li');
+    li.className = 'overall-ranking-list__item number-one-search-results__item';
+    li.dataset.entryId = entry.id;
+
+    li.innerHTML = `
+      <span class="overall-ranking-list__position">${entry.year}</span>
+      <div class="overall-ranking-list__content">
+        <div class="overall-ranking-list__details">
+          <span class="overall-ranking-list__title">${entry.title}</span>
+          <span class="overall-ranking-list__artist">${entry.artist}</span>
+          <div class="number-one-search-results__meta">
+            <a href="/years/${entry.slug}/" class="number-one-search-results__year-link">
+              View ${entry.year} recap
+            </a>
+            ${
+              entry.yearRanking
+                ? `<span class="number-one-search-results__stat">#${entry.yearRanking} year ranking</span>`
+                : ''
+            }
+            ${
+              entry.sequence !== undefined
+                ? `<span class="number-one-search-results__stat">#${entry.sequence + 1} number-one hit</span>`
+                : ''
+            }
+          </div>
+        </div>
+        ${
+          entry.spotifyTrackId
+            ? `<div class="overall-ranking-list__preview">
+                <button
+                  type="button"
+                  class="overall-ranking-list__spotify-toggle"
+                  data-track-id="${entry.spotifyTrackId}"
+                >
+                  Play on Spotify
+                </button>
+              </div>`
+            : ''
         }
-      }
+      </div>
+    `;
+    return li;
+  };
 
-      return null;
-    };
+  const renderResults = (results: NumberOneSearchRecord[]) => {
+    list.innerHTML = '';
+    if (!results.length) return;
+    const fragment = document.createDocumentFragment();
+    results.forEach((r) => fragment.append(createResultItem(r)));
+    list.append(fragment);
+  };
 
-    const payload = getIndexPayload();
-    if (!payload) {
+  /* --------------------------- Search Filtering --------------------------- */
+
+  const filterResults = (
+    query: string,
+    index: NumberOneSearchRecord[]
+  ): NumberOneSearchRecord[] => {
+    const terms = tokenize(query);
+    if (!terms.length) return [];
+    return index.filter((record) =>
+      terms.every((term) => record.tokens.some((token) => token.includes(term)))
+    );
+  };
+
+  const updateUI = (query: string, index: NumberOneSearchRecord[]) => {
+    const results = filterResults(query, index);
+    renderResults(results);
+    const visible = results.length;
+
+    if (empty) empty.hidden = visible > 0;
+    if (count)
+      count.textContent = visible
+        ? `${visible} matching #1 hit${visible > 1 ? 's' : ''}`
+        : 'No #1 hits match your search.';
+  };
+
+  /* ---------------------------- Initialization ---------------------------- */
+
+  (async () => {
+    const index = await loadIndex();
+    if (!index.length) {
+      if (count) count.textContent = 'Failed to load search index.';
       return;
     }
 
-    let records: NumberOneSearchRecord[] = [];
-    try {
-      records = JSON.parse(payload) as NumberOneSearchRecord[];
-    } catch (error) {
-      console.error('Failed to parse #1 search index.', error);
-      records = [];
-    }
+    if (count) count.textContent = 'Type to search for #1 hits…';
 
-    const itemElements = Array.from(list.querySelectorAll<HTMLElement>('[data-entry-id]'));
-    const elementMap = new Map<string, HTMLElement>();
-    itemElements.forEach((item) => {
-      const id = item.dataset.entryId;
-      if (id) {
-        elementMap.set(id, item);
-      }
-    });
+    input.addEventListener('input', (e) => updateUI((e.target as HTMLInputElement).value, index));
+    input.addEventListener('search', (e) => updateUI((e.target as HTMLInputElement).value, index));
 
-    const totalCount = records.length;
-
-    const formatCount = (visible: number) => {
-      if (!countElement) return;
-      const descriptor = visible === 1 ? '#1 hit' : '#1 hits';
-      countElement.textContent = `Showing ${visible} of ${totalCount} ${descriptor}`;
-    };
-
-    const closeSpotify = (container: HTMLElement) => {
-      const openToggle = container.querySelector<HTMLButtonElement>(
-        '.overall-ranking-list__spotify-toggle[aria-expanded="true"]'
-      );
-      if (!openToggle) return;
-      const targetId = openToggle.getAttribute('aria-controls');
-      if (targetId) {
-        const embedContainer = document.getElementById(targetId);
-        if (embedContainer) {
-          embedContainer.hidden = true;
-          embedContainer.innerHTML = '';
-        }
-      }
-      openToggle.setAttribute('aria-expanded', 'false');
-      openToggle.textContent = 'Play on Spotify';
-    };
-
-    const applyVisibility = (element: HTMLElement, shouldShow: boolean) => {
-      if (shouldShow) {
-        if (element.hidden) {
-          element.hidden = false;
-          element.removeAttribute('aria-hidden');
-        }
-      } else {
-        if (!element.hidden) {
-          element.hidden = true;
-          element.setAttribute('aria-hidden', 'true');
-          closeSpotify(element);
-        }
-      }
-    };
-
-    const tokenMap = new Map<string, string[]>();
-    records.forEach((record) => {
-      tokenMap.set(record.id, record.tokens ?? []);
-    });
-
-    const filter = (query: string) => {
-      const terms = tokenize(query);
-      const hasTerms = terms.length > 0;
-      let visibleCount = 0;
-
-      records.forEach((record) => {
-        const element = elementMap.get(record.id);
-        if (!element) {
-          return;
-        }
-
-        if (!hasTerms) {
-          applyVisibility(element, true);
-          visibleCount += 1;
-          return;
-        }
-
-        const tokens = tokenMap.get(record.id) ?? [];
-        const matches = terms.every((term) => tokens.some((token) => token.includes(term)));
-
-        applyVisibility(element, matches);
-        if (matches) {
-          visibleCount += 1;
+    // Optional: prefetch JSON after idle time for smoother future loads
+    if (!sessionStorage.getItem('number-one-search-index')) {
+      requestIdleCallback(async () => {
+        try {
+          await loadIndex();
+        } catch {
+          /* ignore */
         }
       });
+    }
 
-      if (emptyState) {
-        emptyState.hidden = visibleCount > 0;
-        if (visibleCount > 0) {
-          emptyState.setAttribute('aria-hidden', 'true');
-        } else {
-          emptyState.removeAttribute('aria-hidden');
-        }
-      }
-
-      formatCount(visibleCount);
-    };
-
-    formatCount(totalCount);
-
-    form.addEventListener('submit', (event) => {
-      event.preventDefault();
-      filter(input.value);
-    });
-
-    input.addEventListener('input', () => {
-      filter(input.value);
-    });
-
-    input.addEventListener('search', () => {
-      filter(input.value);
-    });
-  }
-}
+    /* ------------------- Fade-In Visibility (Option 2) ------------------- */
+    const makeListVisible = () => list.classList.add('is-ready');
+    if (document.readyState === 'complete') {
+      makeListVisible();
+    } else {
+      window.addEventListener('load', makeListVisible, { once: true });
+    }
+  })();
+})();

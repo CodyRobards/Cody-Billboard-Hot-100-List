@@ -6,59 +6,52 @@ interface Props {
 }
 
 const { items } = Astro.props as Props;
+
+// Sort ascending by year
+const sortedItems = [...items].sort((a, b) => a.year - b.year);
 ---
 
-<ol class="overall-ranking-list number-one-search-results" data-number-one-search-list>
+<ol class="number-one-search-results" data-number-one-search-list>
   {
-    items.map((entry) => {
+    sortedItems.map((entry) => {
       const embedId = `search-${entry.id}`;
       return (
-        <li
-          class="overall-ranking-list__item number-one-search-results__item"
-          data-entry-id={entry.id}
-        >
-          <span class="overall-ranking-list__position number-one-search-results__year">
-            {entry.year}
-          </span>
-          <div class="overall-ranking-list__content">
-            <div class="overall-ranking-list__details">
-              <span class="overall-ranking-list__title">{entry.title}</span>
-              <span class="overall-ranking-list__artist">{entry.artist}</span>
-              <div class="number-one-search-results__meta">
-                <a class="number-one-search-results__year-link" href={`/years/${entry.slug}/`}>
-                  View {entry.year} recap
-                </a>
-                <span
-                  class="number-one-search-results__stat"
-                  aria-label={`Year ranking: #${entry.yearRanking}`}
-                >
-                  #{entry.yearRanking} year ranking
-                </span>
-                <span class="number-one-search-results__stat">
-                  #{entry.sequence + 1} number-one hit of {entry.year}
-                </span>
-              </div>
-              {entry.notes.length ? (
+        <li class="number-one-search-results__item" data-entry-id={entry.id}>
+          <div class="number-one-search-results__content">
+            <div class="number-one-search-results__details">
+              <span class="number-one-search-results__year">{entry.year}</span>
+              <h3 class="number-one-search-results__title">{entry.title}</h3>
+              <p class="number-one-search-results__artist">{entry.artist}</p>
+
+              {entry.notes?.length ? (
                 <ul class="number-one-search-results__notes">
                   {entry.notes.map((note) => (
                     <li>{note}</li>
                   ))}
                 </ul>
               ) : null}
-            </div>
-            {entry.spotifyTrackId ? (
-              <div class="overall-ranking-list__preview">
-                <button
-                  type="button"
-                  class="overall-ranking-list__spotify-toggle"
-                  data-track-id={entry.spotifyTrackId}
-                  aria-controls={embedId}
-                  aria-expanded="false"
-                >
-                  Play on Spotify
-                </button>
-                <div id={embedId} class="overall-ranking-list__spotify" hidden />
+
+              <div class="number-one-search-results__actions">
+                <a class="number-one-search-results__year-link" href={`/years/${entry.slug}/`}>
+                  View {entry.year} recap
+                </a>
+
+                {entry.spotifyTrackId && (
+                  <button
+                    type="button"
+                    class="number-one-search-results__spotify-toggle"
+                    data-track-id={entry.spotifyTrackId}
+                    aria-controls={embedId}
+                    aria-expanded="false"
+                  >
+                    Play on Spotify
+                  </button>
+                )}
               </div>
+            </div>
+
+            {entry.spotifyTrackId ? (
+              <div id={embedId} class="number-one-search-results__spotify" hidden />
             ) : null}
           </div>
         </li>
@@ -70,52 +63,92 @@ const { items } = Astro.props as Props;
 <style>
   .number-one-search-results {
     margin-top: 1.5rem;
+    list-style: none;
+    padding: 0;
+    display: grid;
+    gap: 1.25rem;
   }
 
   .number-one-search-results__item {
-    align-items: stretch;
+    padding: 1rem 1.25rem;
+    border-radius: 1rem;
+    background: var(--color-surface, #fff);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   }
 
   .number-one-search-results__year {
-    font-size: 1.2rem;
-  }
-
-  .number-one-search-results__meta {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem 1rem;
-    margin-top: 0.5rem;
-    color: var(--color-text-muted, rgba(0, 0, 0, 0.65));
-  }
-
-  .number-one-search-results__year-link {
-    font-weight: 600;
-    color: inherit;
-  }
-
-  .number-one-search-results__year-link:focus-visible,
-  .number-one-search-results__year-link:hover {
+    font-size: 1.1rem;
+    font-weight: 700;
     color: var(--color-accent, #8a2be2);
   }
 
-  .number-one-search-results__stat {
-    white-space: nowrap;
+  .number-one-search-results__title {
+    margin: 0.25rem 0 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+  }
+
+  .number-one-search-results__artist {
+    margin: 0.1rem 0 0.75rem;
+    color: var(--color-text-muted, rgba(0, 0, 0, 0.65));
   }
 
   .number-one-search-results__notes {
-    margin: 0.75rem 0 0;
+    margin: 0.5rem 0 0.75rem;
     padding-left: 1.25rem;
-    display: grid;
-    gap: 0.35rem;
-  }
-
-  .number-one-search-results__notes li {
     list-style: disc;
+    color: var(--color-text-muted, rgba(0, 0, 0, 0.8));
   }
 
-  @media (max-width: 48rem) {
-    .number-one-search-results__stat {
-      white-space: normal;
-    }
+  .number-one-search-results__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 0.5rem;
+  }
+
+  .number-one-search-results__year-link {
+    display: inline-block;
+    padding: 0.45rem 0.9rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    text-decoration: none;
+    border-radius: 0.75rem;
+    color: var(--color-accent-contrast, #fff);
+    background-color: var(--color-accent, #8a2be2);
+    transition:
+      background-color 0.2s ease,
+      transform 0.2s ease;
+  }
+
+  .number-one-search-results__year-link:hover,
+  .number-one-search-results__year-link:focus-visible {
+    background-color: var(--color-accent-hover, #7020b8);
+    transform: translateY(-1px);
+  }
+
+  /* 🎵 Match year-page "Play on Spotify" button styling */
+  .number-one-search-results__spotify-toggle {
+    padding: 0.45rem 0.9rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    border-radius: 0.75rem;
+    border: none;
+    cursor: pointer;
+    color: var(--color-accent-contrast, #fff);
+    background-color: var(--color-accent, #8a2be2);
+    transition:
+      background-color 0.2s ease,
+      transform 0.2s ease;
+  }
+
+  .number-one-search-results__spotify-toggle:hover,
+  .number-one-search-results__spotify-toggle:focus-visible {
+    background-color: var(--color-accent-hover, #7020b8);
+    transform: translateY(-1px);
+  }
+
+  .number-one-search-results__spotify {
+    margin-top: 0.75rem;
   }
 </style>

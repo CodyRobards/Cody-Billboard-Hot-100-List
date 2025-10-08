@@ -135,7 +135,7 @@ export function initializeScrollControls() {
     const onScroll = () => {
       evaluateState(overallSection.getBoundingClientRect());
     };
-    window.addEventListener('scroll', onScroll, { passive: true });
+    (window as Window).addEventListener('scroll', onScroll, { passive: true });
     cleanupFns.push(() => window.removeEventListener('scroll', onScroll));
     onScroll();
   }

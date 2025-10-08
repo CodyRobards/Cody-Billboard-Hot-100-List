@@ -34,3 +34,12 @@ body {
     background 200ms ease,
     border-color 200ms ease;
 }
+
+[data-number-one-search-list] {
+  opacity: 0;
+  transition: opacity 200ms ease;
+}
+
+[data-number-one-search-list].is-ready {
+  opacity: 1;
+}
