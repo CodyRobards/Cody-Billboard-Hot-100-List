@@ -18,12 +18,13 @@ const tokenize = (value: string): string[] =>
     .filter((token) => token.length > 0);
 
 if (hasDOM) {
+  const form = document.querySelector<HTMLFormElement>('[data-number-one-search-form]');
   const input = document.querySelector<HTMLInputElement>('[data-number-one-search-input]');
   const list = document.querySelector<HTMLElement>('[data-number-one-search-list]');
   const emptyState = document.querySelector<HTMLElement>('[data-number-one-search-empty]');
   const countElement = document.querySelector<HTMLElement>('[data-number-one-search-count]');
 
-  if (!input || !list) {
+  if (!form || !input || !list) {
     // The search UI is not present on the current page.
   } else {
     const getIndexPayload = (): string | null => {
@@ -152,6 +153,11 @@ if (hasDOM) {
     };
 
     formatCount(totalCount);
+
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      filter(input.value);
+    });
 
     input.addEventListener('input', () => {
       filter(input.value);
