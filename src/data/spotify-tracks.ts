@@ -3370,7 +3370,11 @@ const tracks: SpotifyTrackEntry[] = [
     spotifyTrackId: '2Pxqs0WmxxHTV5QaTdmt3Q',
   },
   { title: 'Windy', artist: 'The Association', spotifyTrackId: '6RUpOheT93fUdI508K5w6U' },
-  { title: 'Wishing Well', artist: 'Sananda Maitreya', spotifyTrackId: '2bvzxeD1hPWEYotw40Euq9' },
+  {
+    title: 'Wishing Well',
+    artist: "Terence Trent D'Arby",
+    spotifyTrackId: '2bvzxeD1hPWEYotw40Euq9',
+  },
   {
     title: 'With A Little Luck - DJ Edit',
     artist: 'Wings',

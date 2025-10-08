@@ -57,6 +57,13 @@ const decadeBuckets = groupYearsByDecade(years)
     </a>
     <a
       class="site-nav__home"
+      href="/search/"
+      aria-current={isActive("/search/") ? "page" : undefined}
+    >
+      Search #1 hits
+    </a>
+    <a
+      class="site-nav__home"
       href="/about/"
       aria-current={isActive("/about/") ? "page" : undefined}
     >
