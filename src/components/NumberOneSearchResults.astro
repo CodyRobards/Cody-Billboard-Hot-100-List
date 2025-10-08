@@ -17,43 +17,46 @@ const sortedItems = [...items].sort((a, b) => a.year - b.year);
       const embedId = `search-${entry.id}`;
       return (
         <li class="number-one-search-results__item" data-entry-id={entry.id}>
-          <div class="number-one-search-results__content">
-            <div class="number-one-search-results__details">
-              <span class="number-one-search-results__year">{entry.year}</span>
-              <h3 class="number-one-search-results__title">{entry.title}</h3>
-              <p class="number-one-search-results__artist">{entry.artist}</p>
-
-              {entry.notes?.length ? (
-                <ul class="number-one-search-results__notes">
-                  {entry.notes.map((note) => (
-                    <li>{note}</li>
-                  ))}
-                </ul>
-              ) : null}
-
-              <div class="number-one-search-results__actions">
-                <a class="number-one-search-results__year-link" href={`/years/${entry.slug}/`}>
-                  View {entry.year} recap
-                </a>
-
-                {entry.spotifyTrackId && (
-                  <button
-                    type="button"
-                    class="number-one-search-results__spotify-toggle"
-                    data-track-id={entry.spotifyTrackId}
-                    aria-controls={embedId}
-                    aria-expanded="false"
-                  >
-                    Play on Spotify
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {entry.spotifyTrackId ? (
-              <div id={embedId} class="number-one-search-results__spotify" hidden />
-            ) : null}
+          <div class="number-one-search-results__header">
+            <span class="number-one-search-results__year">{entry.year}</span>
           </div>
+
+          <div class="number-one-search-results__track">
+            <span class="number-one-search-results__title">
+              "{entry.title}"
+              <span class="number-one-search-results__artist">by {entry.artist}</span>
+            </span>
+          </div>
+
+          {entry.notes?.length ? (
+            <ul class="number-one-search-results__notes">
+              {entry.notes.map((note) => (
+                <li>{note}</li>
+              ))}
+            </ul>
+          ) : null}
+
+          <div class="number-one-search-results__actions">
+            <a class="number-one-search-results__link" href={`/years/${entry.slug}/`}>
+              View {entry.year} recap
+            </a>
+
+            {entry.spotifyTrackId && (
+              <button
+                type="button"
+                class="number-one-search-results__link number-one-search-results__spotify-toggle"
+                data-track-id={entry.spotifyTrackId}
+                aria-controls={embedId}
+                aria-expanded="false"
+              >
+                Play on Spotify
+              </button>
+            )}
+          </div>
+
+          {entry.spotifyTrackId ? (
+            <div id={embedId} class="number-one-search-results__spotify" hidden />
+          ) : null}
         </li>
       );
     })
@@ -62,93 +65,121 @@ const sortedItems = [...items].sort((a, b) => a.year - b.year);
 
 <style>
   .number-one-search-results {
-    margin-top: 1.5rem;
+    margin-top: clamp(1rem, 2vw, 1.5rem);
     list-style: none;
     padding: 0;
     display: grid;
     gap: 1.25rem;
+    border-top: 1px solid var(--color-rule-strong, rgba(255, 255, 255, 0.16));
   }
 
   .number-one-search-results__item {
-    padding: 1rem 1.25rem;
-    border-radius: 1rem;
-    background: var(--color-surface, #fff);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    display: grid;
+    gap: 0.75rem;
+    padding-top: clamp(1rem, 1.75vw, 1.25rem);
+    padding-bottom: 1.25rem;
+    border-bottom: 1px solid var(--color-rule-soft, rgba(255, 255, 255, 0.12));
+  }
+
+  .number-one-search-results__header {
+    display: flex;
+    align-items: baseline;
+    justify-content: flex-start;
   }
 
   .number-one-search-results__year {
-    font-size: 1.1rem;
+    font-family: var(--font-heading, inherit);
     font-weight: 700;
+    font-size: 1.05rem;
     color: var(--color-accent, #8a2be2);
+    letter-spacing: 0.015em;
+    text-transform: uppercase;
+  }
+
+  .number-one-search-results__track {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
   }
 
   .number-one-search-results__title {
-    margin: 0.25rem 0 0;
-    font-size: 1.1rem;
     font-weight: 600;
+    font-size: 1.2rem;
+    color: var(--color-ink, #fff);
+    line-break: loose;
+    word-break: keep-all;
+    overflow-wrap: break-word;
   }
 
   .number-one-search-results__artist {
-    margin: 0.1rem 0 0.75rem;
-    color: var(--color-text-muted, rgba(0, 0, 0, 0.65));
+    font-weight: 400;
+    font-size: 1.05rem;
+    color: var(--color-muted, rgba(255, 255, 255, 0.72));
+    display: inline;
+    white-space: nowrap;
+    margin-left: 0.25rem;
   }
 
   .number-one-search-results__notes {
-    margin: 0.5rem 0 0.75rem;
-    padding-left: 1.25rem;
+    font-size: 0.95rem;
+    margin: 0;
+    padding: 0 0 0 1.25rem;
+    display: grid;
+    gap: 0.6rem;
     list-style: disc;
-    color: var(--color-text-muted, rgba(0, 0, 0, 0.8));
+    color: var(--color-muted, rgba(255, 255, 255, 0.72));
   }
 
   .number-one-search-results__actions {
     display: flex;
     flex-wrap: wrap;
     gap: 0.75rem;
-    margin-top: 0.5rem;
   }
 
-  .number-one-search-results__year-link {
-    display: inline-block;
-    padding: 0.45rem 0.9rem;
-    font-size: 0.95rem;
-    font-weight: 600;
-    text-decoration: none;
-    border-radius: 0.75rem;
-    color: var(--color-accent-contrast, #fff);
-    background-color: var(--color-accent, #8a2be2);
-    transition:
-      background-color 0.2s ease,
-      transform 0.2s ease;
-  }
-
-  .number-one-search-results__year-link:hover,
-  .number-one-search-results__year-link:focus-visible {
-    background-color: var(--color-accent-hover, #7020b8);
-    transform: translateY(-1px);
-  }
-
-  /* 🎵 Match year-page "Play on Spotify" button styling */
-  .number-one-search-results__spotify-toggle {
-    padding: 0.45rem 0.9rem;
-    font-size: 0.95rem;
-    font-weight: 600;
-    border-radius: 0.75rem;
+  .number-one-search-results__link {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0;
     border: none;
+    background: none;
+    font: inherit;
+    color: var(--color-accent, #8a2be2);
+    text-decoration: none;
     cursor: pointer;
-    color: var(--color-accent-contrast, #fff);
-    background-color: var(--color-accent, #8a2be2);
-    transition:
-      background-color 0.2s ease,
-      transform 0.2s ease;
+    transition: color 0.2s ease;
   }
 
-  .number-one-search-results__spotify-toggle:hover,
-  .number-one-search-results__spotify-toggle:focus-visible {
-    background-color: var(--color-accent-hover, #7020b8);
-    transform: translateY(-1px);
+  .number-one-search-results__link:hover {
+    color: var(--color-accent-hover, #7020b8);
+    text-decoration: underline;
+  }
+
+  .number-one-search-results__link:focus-visible {
+    outline: 2px solid var(--color-accent, #8a2be2);
+    outline-offset: 3px;
+  }
+
+  .number-one-search-results__spotify-toggle {
+    line-height: 1.3;
   }
 
   .number-one-search-results__spotify {
-    margin-top: 0.75rem;
+    margin-top: 0.5rem;
+  }
+
+  @media (min-width: 48rem) {
+    .number-one-search-results__item {
+      padding-bottom: 1.75rem;
+    }
+
+    .number-one-search-results__year {
+      font-size: 1.15rem;
+    }
+
+    .number-one-search-results__title {
+      font-size: 1.45rem;
+    }
   }
 </style>
