@@ -70,10 +70,13 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  const isFontRequest = request.destination === 'font' || url.pathname.endsWith('.woff2');
+
   if (
     url.pathname.startsWith('/assets/') ||
     url.pathname.endsWith('.js') ||
-    url.pathname.endsWith('.css')
+    url.pathname.endsWith('.css') ||
+    isFontRequest
   ) {
     event.respondWith(handleStaticAssetRequest(request));
   }
