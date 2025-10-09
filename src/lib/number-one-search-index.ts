@@ -7,17 +7,21 @@ interface NumberOneEntry {
   notes?: string[];
 }
 
-export interface NumberOneSearchRecord {
-  id: string;
-  title: string;
-  artist: string;
-  notes: string[];
+export interface NumberOneSearchRecordAppearance {
   year: number;
   slug: string;
   /** Ranking of the year in the overall list. */
   yearRanking: number;
   /** Zero-based index of the track within the year's #1 list. */
   sequence: number;
+}
+
+export interface NumberOneSearchRecord {
+  id: string;
+  title: string;
+  artist: string;
+  notes: string[];
+  appearances: NumberOneSearchRecordAppearance[];
   spotifyTrackId?: string;
   /** Normalized search tokens used by the client-side search script. */
   tokens: string[];
@@ -52,9 +56,12 @@ const buildTokens = (entry: NumberOneSearchRecord): string[] => {
 
   add(entry.title);
   add(entry.artist);
-  add(entry.year);
-  add(entry.slug);
-  add(entry.yearRanking);
+  entry.appearances.forEach((appearance) => {
+    add(appearance.year);
+    add(appearance.slug);
+    add(appearance.yearRanking);
+    add(appearance.sequence);
+  });
   entry.notes.forEach(add);
 
   return Array.from(tokenSet);
@@ -68,46 +75,88 @@ export function filterNumberOneSearchRecords(
   if (!terms.length) {
     return [];
   }
-  return records.filter((record) =>
-    terms.every((term) => record.tokens.some((token) => token.includes(term)))
-  );
+  return records
+    .filter((record) => terms.every((term) => record.tokens.some((token) => token.includes(term))))
+    .sort((a, b) => {
+      const aFirst = a.appearances[0];
+      const bFirst = b.appearances[0];
+      if (!aFirst || !bFirst) return 0;
+      if (aFirst.year === bFirst.year) {
+        return aFirst.sequence - bFirst.sequence;
+      }
+      return aFirst.year - bFirst.year;
+    });
 }
 
 export async function loadNumberOneSearchIndex(): Promise<NumberOneSearchRecord[]> {
   const yearEntries = await getCollection('years');
 
-  const flattened = yearEntries.flatMap((entry) => {
+  const normalizeKey = (title: string, artist: string) =>
+    normalize(`${title}::${artist}`).replace(/[^a-z0-9]+/g, '-');
+
+  const grouped = new Map<string, NumberOneSearchRecord>();
+
+  yearEntries.forEach((entry) => {
     const { slug } = entry;
     const { numberOnes = [], year, ranking } = entry.data;
     const yearRanking = typeof ranking === 'number' ? ranking : 0;
 
-    return numberOnes.map((track: NumberOneEntry, index) => {
-      const id = `year-${year}-${slug}-number-${index + 1}`;
-      const baseRecord: NumberOneSearchRecord = {
-        id,
-        title: track.title,
-        artist: track.artist,
-        notes: track.notes ?? [],
+    numberOnes.forEach((track: NumberOneEntry, index) => {
+      const appearance = {
         year,
         slug,
         yearRanking,
         sequence: index,
-        spotifyTrackId: getSpotifyTrackId(track.title, track.artist) ?? undefined,
-        tokens: [],
-      };
+      } satisfies NumberOneSearchRecordAppearance;
 
-      const tokens = buildTokens(baseRecord);
-      return {
-        ...baseRecord,
-        tokens,
-      };
+      const key = normalizeKey(track.title, track.artist);
+      const existing = grouped.get(key);
+      const spotifyTrackId = getSpotifyTrackId(track.title, track.artist) ?? undefined;
+
+      if (existing) {
+        existing.appearances.push(appearance);
+        if (spotifyTrackId && !existing.spotifyTrackId) {
+          existing.spotifyTrackId = spotifyTrackId;
+        }
+        track.notes?.forEach((note) => existing.notes.push(note));
+      } else {
+        const sanitizedKey = key.replace(/^-+|-+$/g, '');
+        const idBase = sanitizedKey || `${year}-${index + 1}`;
+        grouped.set(key, {
+          id: `track-${idBase}`,
+          title: track.title,
+          artist: track.artist,
+          notes: [...(track.notes ?? [])],
+          appearances: [appearance],
+          spotifyTrackId,
+          tokens: [],
+        });
+      }
     });
   });
 
-  return flattened.sort((a, b) => {
-    if (a.year === b.year) {
-      return a.sequence - b.sequence;
+  const records = Array.from(grouped.values()).map((record) => {
+    const noteSet = new Set(record.notes);
+    record.notes = Array.from(noteSet);
+    record.appearances.sort((a, b) => {
+      if (a.year === b.year) {
+        return a.sequence - b.sequence;
+      }
+      return a.year - b.year;
+    });
+    record.tokens = buildTokens(record);
+    return record;
+  });
+
+  return records.sort((a, b) => {
+    const aFirst = a.appearances[0];
+    const bFirst = b.appearances[0];
+    if (!aFirst || !bFirst) {
+      return 0;
     }
-    return a.year - b.year;
+    if (aFirst.year === bFirst.year) {
+      return aFirst.sequence - bFirst.sequence;
+    }
+    return aFirst.year - bFirst.year;
   });
 }

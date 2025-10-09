@@ -7,16 +7,20 @@
  */
 
 (() => {
+  interface NumberOneSearchRecordAppearance {
+    year: number;
+    slug: string;
+    yearRanking: number;
+    sequence: number;
+  }
+
   interface NumberOneSearchRecord {
     id: string;
     title: string;
     artist: string;
-    year: number;
-    slug: string;
     notes: string[];
+    appearances: NumberOneSearchRecordAppearance[];
     spotifyTrackId?: string;
-    yearRanking?: number;
-    sequence?: number;
     tokens: string[];
   }
 
@@ -98,6 +102,16 @@
     const notes = entry.notes.map((note) => `<li>${note}</li>`).join('');
 
     const notesMarkup = notes ? `<ul class="number-one-search-results__notes">${notes}</ul>` : '';
+    const yearsLabel = entry.appearances.map((appearance) => appearance.year).join(', ');
+    const recapLinks = entry.appearances
+      .map((appearance) =>
+        `
+          <a href="/years/${appearance.slug}/" class="number-one-search-results__link number-one-search-results__link--pill">
+            View ${appearance.year} Recap 
+          </a>
+        `.trim()
+      )
+      .join('');
 
     const spotifyMarkup = entry.spotifyTrackId
       ? `<div class="number-one-search-results__spotify">
@@ -117,15 +131,13 @@
     li.innerHTML = `
       <div class="number-one-search-results__content">
         <div class="number-one-search-results__header">
-          <span class="number-one-search-results__year">${entry.year}</span>
+          <span class="number-one-search-results__year">${yearsLabel}</span>
           <h3 class="number-one-search-results__title">“${entry.title}”</h3>
           <p class="number-one-search-results__artist">by <a class="number-one-search-results__artist-link" href="/search/?q=${encodeURIComponent(entry.artist)}">${entry.artist}</a></p>
         </div>
         ${notesMarkup}
         <div class="number-one-search-results__actions">
-          <a href="/years/${entry.slug}/" class="number-one-search-results__year-link">
-            View ${entry.year} recap
-          </a>
+          ${recapLinks}
           ${spotifyMarkup}
         </div>
       </div>
@@ -135,12 +147,13 @@
 
   const sortResults = (items: NumberOneSearchRecord[]) =>
     items.slice().sort((a, b) => {
-      if (a.year === b.year) {
-        const aSequence = typeof a.sequence === 'number' ? a.sequence : 0;
-        const bSequence = typeof b.sequence === 'number' ? b.sequence : 0;
-        return aSequence - bSequence;
+      const aFirst = a.appearances[0];
+      const bFirst = b.appearances[0];
+      if (!aFirst || !bFirst) return 0;
+      if (aFirst.year === bFirst.year) {
+        return aFirst.sequence - bFirst.sequence;
       }
-      return a.year - b.year;
+      return aFirst.year - bFirst.year;
     });
 
   const renderResults = (results: NumberOneSearchRecord[]) => {
