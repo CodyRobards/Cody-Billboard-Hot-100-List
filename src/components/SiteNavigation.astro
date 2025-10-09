@@ -1,13 +1,14 @@
 ---
-import type { YearEntry } from "../lib/content-utils";
+import type { DecadeEntry, YearEntry } from "../lib/content-utils";
 import { groupYearsByDecade } from "../lib/content-utils";
 
 interface Props {
   years: Record<number, YearEntry[]>;
+  decades: DecadeEntry[];
   currentPath: string;
 }
 
-const { years, currentPath } = Astro.props as Props;
+const { years, decades, currentPath } = Astro.props as Props;
 
 const ensureTrailingSlash = (href: string) => (href.endsWith("/") ? href : `${href}/`);
 
@@ -48,6 +49,18 @@ const decadeBuckets = groupYearsByDecade(years)
     };
   })
   .filter((bucket) => bucket.items.length > 0);
+
+const decadeLinks = decades
+  .map((entry) => {
+    const href = ensureTrailingSlash(`/decades/${entry.slug}`);
+    return {
+      decade: entry.data.decade,
+      label: `${entry.data.decade}s`,
+      href,
+      isActive: isActive(href),
+    };
+  })
+  .sort((a, b) => a.decade - b.decade);
 ---
 
 <nav class="site-nav" aria-label="Archive navigation">
@@ -91,6 +104,26 @@ const decadeBuckets = groupYearsByDecade(years)
       Bottom 60
     </a>
   </div>
+  {
+    decadeLinks.length ? (
+      <div class="site-nav__section" aria-label="Decades">
+        <h2 class="site-nav__heading">Decade overviews</h2>
+        <ul class="site-nav__year-list">
+          {decadeLinks.map((link) => (
+            <li class={`site-nav__year-item ${link.isActive ? "is-current" : ""}`}>
+              <a
+                class="site-nav__year-link"
+                href={link.href}
+                aria-current={link.isActive ? "page" : undefined}
+              >
+                {link.label}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+    ) : null
+  }
   <div class="site-nav__section" aria-label="Years">
     <h2 class="site-nav__heading">Yearly rankings</h2>
     <ul class="site-nav__decade-list">

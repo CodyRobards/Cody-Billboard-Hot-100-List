@@ -6,7 +6,7 @@ import spotifyToggleScriptHref from "../scripts/spotify-embed-toggle.ts?url";
 import scrollControlsScriptHref from "../scripts/scroll-controls.ts?url";
 import nonCriticalStylesHref from "../styles/noncritical.css?url";
 import SiteNavigation from "../components/SiteNavigation.astro";
-import { getYearGroups } from "../lib/content-utils";
+import { getDecades, getYearGroups } from "../lib/content-utils";
 
 interface Props {
   pageTitle?: string;
@@ -20,7 +20,7 @@ const metaDescription =
   description ??
   "An instant-reference archive of Billboard Hot 100 milestones with year-by-year recaps and chart rankings.";
 
-const years = await getYearGroups();
+const [years, decades] = await Promise.all([getYearGroups(), getDecades()]);
 
 const currentPath = Astro.url.pathname.endsWith("/")
   ? Astro.url.pathname
@@ -81,7 +81,7 @@ const currentPath = Astro.url.pathname.endsWith("/")
       </header>
       <div class="page-layout" id="content-root">
         <aside class="page-layout__nav" aria-label="Primary navigation">
-          <SiteNavigation years={years} currentPath={currentPath} />
+          <SiteNavigation years={years} decades={decades} currentPath={currentPath} />
         </aside>
         <main id="page-main" class="page-layout__main">
           <slot />

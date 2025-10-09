@@ -1,0 +1,62 @@
+---
+import SiteLayout from "../../layouts/SiteLayout.astro";
+import { clampExcerpt } from "../../lib/formatting";
+import { getDecades, getYearGroups, getYearsForDecade } from "../../lib/content-utils";
+
+const [decadeEntries, yearGroups] = await Promise.all([getDecades(), getYearGroups()]);
+
+const cards = decadeEntries.map((entry) => {
+  const decadeStart = entry.data.decade;
+  const decadeEnd = decadeStart + 9;
+  const decadeLabel = `${decadeStart}s`;
+  const associatedYears = getYearsForDecade(decadeStart, yearGroups);
+  const summaryHighlight = entry.data.summaryHighlights?.[0] ?? null;
+
+  return {
+    title: entry.data.title ?? decadeLabel,
+    label: decadeLabel,
+    href: `/decades/${entry.slug}/`,
+    summary: clampExcerpt(entry.data.summary),
+    summaryHighlight,
+    range: `${decadeStart} – ${decadeEnd}`,
+    totalYears: associatedYears.length
+      ? new Set(associatedYears.map((year) => year.data.year)).size
+      : 0,
+  };
+});
+---
+
+<SiteLayout
+  pageTitle="Decade overviews"
+  description="Browse decade-long overviews of the Billboard Hot 100 archive."
+>
+  <article class="section" aria-labelledby="decade-index-heading">
+    <header class="section__header">
+      <h1 class="section__title" id="decade-index-heading">Browse by decade</h1>
+      <p class="section__lead">
+        Explore decade-scale shifts in the Billboard Hot 100 and jump into the year-by-year recaps
+        that define each era.
+      </p>
+    </header>
+    <div class="record-grid">
+      {
+        cards.map((card) => (
+          <a class="record-card record-card--link" href={card.href}>
+            <h2 class="record-card__title">{card.label}</h2>
+            <p class="record-card__excerpt">{card.summary}</p>
+            {card.summaryHighlight ? (
+              <p class="record-card__meta">{card.summaryHighlight}</p>
+            ) : null}
+            {card.totalYears ? (
+              <p class="record-card__meta">
+                Covers {card.totalYears} yearly recaps ({card.range})
+              </p>
+            ) : (
+              <p class="record-card__meta">Overview for {card.range}</p>
+            )}
+          </a>
+        ))
+      }
+    </div>
+  </article>
+</SiteLayout>

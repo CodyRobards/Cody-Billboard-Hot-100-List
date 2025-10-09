@@ -70,8 +70,18 @@ const meta = defineCollection({
   }),
 });
 
+const decades = defineCollection({
+  type: 'content',
+  schema: baseTrackSchema.extend({
+    decade: z.number().int(),
+    summary: z.string(),
+    summaryHighlights: z.array(z.string()).default([]),
+  }),
+});
+
 export const collections = {
   years,
   rankings,
   meta,
+  decades,
 };

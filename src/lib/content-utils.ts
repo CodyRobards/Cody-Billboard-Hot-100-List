@@ -2,6 +2,7 @@ import { getCollection, type CollectionEntry } from 'astro:content';
 
 export type YearEntry = CollectionEntry<'years'>;
 export type RankingEntry = CollectionEntry<'rankings'>;
+export type DecadeEntry = CollectionEntry<'decades'>;
 
 export type YearGroups = Record<number, YearEntry[]>;
 
@@ -63,6 +64,31 @@ export function groupYearsByDecade(groups: YearGroups): DecadeBucket[] {
       decade,
       years: years.sort((a, b) => a.year - b.year),
     }));
+}
+
+export async function getDecades(): Promise<DecadeEntry[]> {
+  const entries = await getCollection('decades');
+  return entries.sort((a, b) => a.data.decade - b.data.decade);
+}
+
+export function getYearsForDecade(decade: number, groups: YearGroups): YearEntry[] {
+  const start = Math.floor(decade / 10) * 10;
+  const end = start + 9;
+
+  const years: YearEntry[] = [];
+
+  for (let year = start; year <= end; year += 1) {
+    const entries = groups[year] ?? [];
+    if (!entries.length) continue;
+    years.push(...entries);
+  }
+
+  return years.sort((a, b) => {
+    if (a.data.year !== b.data.year) {
+      return a.data.year - b.data.year;
+    }
+    return a.data.ranking - b.data.ranking;
+  });
 }
 
 /**

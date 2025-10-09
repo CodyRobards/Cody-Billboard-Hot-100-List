@@ -1,0 +1,160 @@
+---
+import SiteLayout from "../../layouts/SiteLayout.astro";
+import ResponsiveImage from "../../components/ResponsiveImage.astro";
+import { getCollection } from "astro:content";
+import { getDecades, getYearGroups, getYearsForDecade } from "../../lib/content-utils";
+
+export async function getStaticPaths() {
+  const entries = await getCollection("decades");
+  return entries.map((entry) => ({
+    params: { slug: entry.slug },
+    props: { entryId: entry.id },
+  }));
+}
+
+interface Props {
+  entryId: string;
+}
+
+const { entryId } = Astro.props as Props;
+const [entry] = await getCollection("decades", ({ id }) => id === entryId);
+
+if (!entry) {
+  throw new Error(`Decade entry not found for ${entryId}`);
+}
+
+const [{ Content }, yearGroups, decadeEntries] = await Promise.all([
+  entry.render(),
+  getYearGroups(),
+  getDecades(),
+]);
+
+const summaryParagraphs = entry.data.summary
+  .split(/\n{2,}/)
+  .map((paragraph) => paragraph.trim())
+  .filter(Boolean);
+
+const commentaryParagraphs = entry.data.commentary
+  ? entry.data.commentary
+      .split(/\n{2,}/)
+      .map((paragraph) => paragraph.trim())
+      .filter(Boolean)
+  : [];
+
+const highlights = entry.data.summaryHighlights ?? [];
+
+const decadeStart = entry.data.decade;
+const decadeEnd = decadeStart + 9;
+const decadeLabel = `${decadeStart}s`;
+const coverageLabel = `${decadeStart} – ${decadeEnd}`;
+
+const associatedYears = getYearsForDecade(decadeStart, yearGroups);
+const uniqueYearEntries = Array.from(
+  associatedYears.reduce((map, yearEntry) => {
+    if (!map.has(yearEntry.data.year)) {
+      map.set(yearEntry.data.year, yearEntry);
+    }
+    return map;
+  }, new Map<number, (typeof associatedYears)[number]>())
+)
+  .map(([year, yearEntry]) => ({ year, entry: yearEntry }))
+  .sort((a, b) => a.year - b.year);
+
+const yearLinks = uniqueYearEntries.map(({ year, entry: yearEntry }) => ({
+  year,
+  title: yearEntry.data.title,
+  href: `/years/${yearEntry.slug}/`,
+}));
+
+const currentIndex = decadeEntries.findIndex((item) => item.slug === entry.slug);
+const previousDecade = currentIndex > 0 ? decadeEntries[currentIndex - 1] : null;
+const nextDecade =
+  currentIndex >= 0 && currentIndex < decadeEntries.length - 1
+    ? decadeEntries[currentIndex + 1]
+    : null;
+
+const pageTitle = entry.data.title ?? `${decadeLabel} overview`;
+const pageDescription =
+  entry.data.commentary_excerpt ??
+  summaryParagraphs[0] ??
+  `Highlights from the Billboard Hot 100 in the ${decadeLabel}.`;
+---
+
+<SiteLayout pageTitle={pageTitle} description={pageDescription}>
+  <article class="article">
+    <header class="article__header">
+      <h1>{decadeLabel}</h1>
+      <ResponsiveImage
+        image={entry.data.cover_image}
+        class="article__image"
+        sizes="(min-width: 72rem) 32rem, 100vw"
+      />
+    </header>
+    <div class="article__body">
+      <p class="article__lede">Covering Billboard Hot 100 stories from {coverageLabel}.</p>
+      {commentaryParagraphs.map((paragraph) => <p>{paragraph}</p>)}
+      {summaryParagraphs.map((paragraph) => <p>{paragraph}</p>)}
+      {
+        highlights.length ? (
+          <section aria-labelledby="decade-highlights-heading">
+            <h2 id="decade-highlights-heading">Highlights</h2>
+            <ul>
+              {highlights.map((item) => (
+                <li>{item}</li>
+              ))}
+            </ul>
+          </section>
+        ) : null
+      }
+      <Content />
+      {
+        yearLinks.length ? (
+          <section aria-labelledby="decade-years-heading">
+            <h2 id="decade-years-heading">Year-by-year recaps</h2>
+            <ul>
+              {yearLinks.map((link) => (
+                <li>
+                  <a href={link.href}>{link.title ?? link.year}</a>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null
+      }
+    </div>
+    {
+      (previousDecade || nextDecade) && (
+        <footer class="article__footer">
+          <nav class="article-pagination" aria-label="Decade navigation">
+            <div class="article-pagination__item article-pagination__item--prev">
+              {previousDecade ? (
+                <a class="article-pagination__link" href={`/decades/${previousDecade.slug}/`}>
+                  <span class="article-pagination__icon" aria-hidden="true">
+                    ←
+                  </span>
+                  <span class="article-pagination__meta">
+                    <span class="article-pagination__label">Previous</span>
+                    <span class="article-pagination__title">{`${previousDecade.data.decade}s`}</span>
+                  </span>
+                </a>
+              ) : null}
+            </div>
+            <div class="article-pagination__item article-pagination__item--next">
+              {nextDecade ? (
+                <a class="article-pagination__link" href={`/decades/${nextDecade.slug}/`}>
+                  <span class="article-pagination__meta">
+                    <span class="article-pagination__label">Next</span>
+                    <span class="article-pagination__title">{`${nextDecade.data.decade}s`}</span>
+                  </span>
+                  <span class="article-pagination__icon" aria-hidden="true">
+                    →
+                  </span>
+                </a>
+              ) : null}
+            </div>
+          </nav>
+        </footer>
+      )
+    }
+  </article>
+</SiteLayout>
