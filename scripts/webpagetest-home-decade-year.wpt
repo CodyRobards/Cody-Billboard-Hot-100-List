@@ -1,0 +1,19 @@
+setBaseUrl    $BASE_URL
+
+logData       0
+navigate      /
+waitFor       document.querySelector('.hero')
+logData       1
+label         Home
+
+logData       0
+navigate      /years/?decade=1990s
+waitFor       document.querySelector('.record-grid')
+logData       1
+label         Decade
+
+logData       0
+navigate      /years/1990/
+waitFor       document.querySelector('main')
+logData       1
+label         Year

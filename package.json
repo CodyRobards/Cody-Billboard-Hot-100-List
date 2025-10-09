@@ -23,6 +23,7 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.4",
+    "@lhci/cli": "^0.14.0",
     "@types/node": "^24.6.2",
     "@typescript-eslint/eslint-plugin": "^8.18.0",
     "@typescript-eslint/parser": "^8.18.0",
@@ -36,6 +37,7 @@
     "prettier-plugin-astro": "^0.14.1",
     "typescript": "^5.9.3",
     "vitest": "^3.2.4",
+    "webpagetest": "^0.7.6",
     "yaml": "^2.8.1"
   },
   "lint-staged": {

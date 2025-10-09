@@ -39,9 +39,23 @@ Run the following commands locally and ensure they pass before requesting review
 npm install
 npm run lint
 npm run build
+npm exec lhci autorun -- --config=./lighthouserc.json
+# Requires WEBPAGETEST_API_KEY and WEBPAGETEST_BASE_URL environment variables
+# pointing at a deploy that WebPageTest can reach.
+export BASE_URL="$WEBPAGETEST_BASE_URL"
+envsubst < scripts/webpagetest-home-decade-year.wpt > /tmp/wpt-script.wpt
+npm exec webpagetest test /tmp/wpt-script.wpt -- \
+  --key "$WEBPAGETEST_API_KEY" \
+  --server "${WEBPAGETEST_SERVER:-https://www.webpagetest.org}" \
+  --label "Home → decade → year" \
+  --runs 1 \
+  --first \
+  --location "Dulles:Chrome"
 ```
 
 If your change affects content or data fetching, also add or update relevant tests or validation scripts. Include command outputs in your PR description when possible.
+
+The Lighthouse CI step enforces our core web vital budgets: **LCP < 1.5s**, **CLS < 0.05**, and **INP < 200ms** across the key pages defined in `lighthouserc.json`. The WebPageTest script exercises the home → decade → year flow against a deployed URL and should be run against the same environment you reference in your pull request. Store API keys and base URLs in `.env.local` for local experimentation, and configure matching GitHub Actions secrets (`WEBPAGETEST_API_KEY`, `WEBPAGETEST_BASE_URL`, and optionally `WEBPAGETEST_SERVER`) so the CI pipeline mirrors your local checks.
 
 ## Updating Spotify Track References
 
