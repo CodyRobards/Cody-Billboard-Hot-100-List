@@ -1,0 +1,36 @@
+.overall-ranking-list__spotify-toggle {
+  align-self: flex-start;
+  padding: 0.45rem 0.95rem;
+  border-radius: 999px;
+  border: 1px solid rgba(246, 238, 227, 0.22);
+  background: transparent;
+  color: var(--color-ink);
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background-color var(--transition-speed) ease,
+    border-color var(--transition-speed) ease;
+}
+
+.overall-ranking-list__spotify-toggle:hover,
+.overall-ranking-list__spotify-toggle:focus-visible {
+  background: rgba(246, 238, 227, 0.15);
+  border-color: rgba(246, 238, 227, 0.45);
+}
+
+.overall-ranking-list__spotify {
+  width: min(100%, 20rem);
+}
+
+.overall-ranking-list__spotify iframe {
+  width: 100%;
+  height: 80px;
+  border: 0;
+  border-radius: 0.75rem;
+}
+
+@media (max-width: 40rem) {
+  .overall-ranking-list__spotify {
+    width: 100%;
+  }
+}

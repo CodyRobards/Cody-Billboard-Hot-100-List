@@ -55,27 +55,29 @@ const sortedItems = [...items].sort((a, b) => {
 
           <div class="number-one-search-results__actions">
             {entry.appearances.map((appearance) => (
-              <a class="number-one-search-results__link" href={`/years/${appearance.slug}/`}>
+              <a
+                class="number-one-search-results__link number-one-search-results__link--pill"
+                href={`/years/${appearance.slug}/`}
+              >
                 View {appearance.year} Recap
               </a>
             ))}
 
-            {entry.spotifyTrackId && (
-              <button
-                type="button"
-                class="number-one-search-results__link number-one-search-results__spotify-toggle"
-                data-track-id={entry.spotifyTrackId}
-                aria-controls={embedId}
-                aria-expanded="false"
-              >
-                Play on Spotify
-              </button>
-            )}
+            {entry.spotifyTrackId ? (
+              <div class="number-one-search-results__spotify">
+                <button
+                  type="button"
+                  class="overall-ranking-list__spotify-toggle"
+                  data-track-id={entry.spotifyTrackId}
+                  aria-controls={embedId}
+                  aria-expanded="false"
+                >
+                  Play on Spotify
+                </button>
+                <div id={embedId} class="overall-ranking-list__spotify" hidden />
+              </div>
+            ) : null}
           </div>
-
-          {entry.spotifyTrackId ? (
-            <div id={embedId} class="number-one-search-results__spotify" hidden />
-          ) : null}
         </li>
       );
     })
@@ -83,6 +85,8 @@ const sortedItems = [...items].sort((a, b) => {
 </ol>
 
 <style>
+  @import "../styles/overall-ranking-list.css";
+
   .number-one-search-results {
     margin-top: clamp(1rem, 2vw, 1.5rem);
     list-style: none;
@@ -168,38 +172,47 @@ const sortedItems = [...items].sort((a, b) => {
   }
 
   .number-one-search-results__link {
-    position: relative;
     display: inline-flex;
     align-items: center;
-    gap: 0.35rem;
-    padding: 0;
-    border: none;
-    background: none;
-    font: inherit;
-    color: var(--color-accent, #8a2be2);
-    text-decoration: none;
-    cursor: pointer;
-    transition: color 0.2s ease;
+    justify-content: center;
     flex: 0 0 auto;
     white-space: nowrap;
+    text-decoration: none;
   }
 
-  .number-one-search-results__link:hover {
-    color: var(--color-accent-hover, #7020b8);
-    text-decoration: underline;
+  .number-one-search-results__link--pill {
+    padding: 0.5rem 1rem;
+    border-radius: 999px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--color-paper);
+    background: var(--color-accent);
+    box-shadow: 0 0.75rem 1.5rem rgba(0, 0, 0, 0.35);
+    transition:
+      transform var(--transition-speed, 0.18s) ease,
+      box-shadow var(--transition-speed, 0.18s) ease,
+      background-color var(--transition-speed, 0.18s) ease;
   }
 
-  .number-one-search-results__link:focus-visible {
-    outline: 2px solid var(--color-accent, #8a2be2);
-    outline-offset: 3px;
-  }
-
-  .number-one-search-results__spotify-toggle {
-    line-height: 1.3;
+  .number-one-search-results__link--pill:hover,
+  .number-one-search-results__link--pill:focus-visible {
+    transform: translateY(-0.15rem);
+    box-shadow: 0 1rem 2rem rgba(0, 0, 0, 0.45);
+    background-color: #e0a871;
   }
 
   .number-one-search-results__spotify {
-    margin-top: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    min-width: 16rem;
+  }
+
+  @media (max-width: 40rem) {
+    .number-one-search-results__spotify {
+      min-width: 0;
+      width: 100%;
+    }
   }
 
   @media (min-width: 48rem) {
