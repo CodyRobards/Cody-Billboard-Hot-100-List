@@ -42,7 +42,14 @@ const resolvedItems = items.map((entry) => ({
             <div class="overall-ranking-list__content">
               <div class="overall-ranking-list__details">
                 <span class="overall-ranking-list__title">{entry.title}</span>
-                <span class="overall-ranking-list__artist">{entry.artist}</span>
+                <span class="overall-ranking-list__artist">
+                  <a
+                    class="overall-ranking-list__artist-link"
+                    href={`/search/?q=${encodeURIComponent(entry.artist)}`}
+                  >
+                    {entry.artist}
+                  </a>
+                </span>
               </div>
               {entry.spotifyTrackId ? (
                 <div class="overall-ranking-list__preview">
@@ -125,6 +132,16 @@ const resolvedItems = items.map((entry) => ({
 
   .overall-ranking-list__artist {
     color: var(--color-text-muted, rgba(0, 0, 0, 0.65));
+  }
+
+  .overall-ranking-list__artist-link {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .overall-ranking-list__artist-link:hover,
+  .overall-ranking-list__artist-link:focus-visible {
+    text-decoration: underline;
   }
 
   .overall-ranking-list__preview {

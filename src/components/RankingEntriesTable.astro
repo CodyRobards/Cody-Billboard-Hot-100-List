@@ -59,7 +59,14 @@ const { heading, description, entries } = Astro.props as Props;
                 </td>
                 <td data-sort-title data-sort-value={entry.title.toLowerCase()}>
                   <span class="ranking-table__title">{entry.title}</span>
-                  <span class="ranking-table__artist">{entry.artist}</span>
+                  <span class="ranking-table__artist">
+                    <a
+                      class="ranking-table__artist-link"
+                      href={`/search/?q=${encodeURIComponent(entry.artist)}`}
+                    >
+                      {entry.artist}
+                    </a>
+                  </span>
                 </td>
                 <td data-sort-year data-sort-value={(entry.year ?? "").toLowerCase()}>
                   {entry.year ?? "—"}
@@ -100,6 +107,16 @@ const { heading, description, entries } = Astro.props as Props;
     display: block;
     font-size: 0.9rem;
     color: var(--color-text-muted, rgba(0, 0, 0, 0.65));
+  }
+
+  .ranking-table__artist-link {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .ranking-table__artist-link:hover,
+  .ranking-table__artist-link:focus-visible {
+    text-decoration: underline;
   }
 
   .ranking-table--full th,

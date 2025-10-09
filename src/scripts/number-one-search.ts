@@ -119,7 +119,7 @@
         <div class="number-one-search-results__header">
           <span class="number-one-search-results__year">${entry.year}</span>
           <h3 class="number-one-search-results__title">“${entry.title}”</h3>
-          <p class="number-one-search-results__artist">by ${entry.artist}</p>
+          <p class="number-one-search-results__artist">by <a class="number-one-search-results__artist-link" href="/search/?q=${encodeURIComponent(entry.artist)}">${entry.artist}</a></p>
         </div>
         ${notesMarkup}
         <div class="number-one-search-results__actions">
