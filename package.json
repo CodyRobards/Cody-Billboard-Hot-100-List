@@ -9,6 +9,7 @@
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
+    "lhci": "./scripts/run-lhci.sh",
     "lint": "eslint \"src/**/*.{astro,ts,tsx,js,jsx}\"",
     "lint:fix": "npm run lint -- --fix",
     "format": "prettier --check \"**/*.{astro,ts,tsx,js,jsx,json,css}\"",
