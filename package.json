@@ -9,7 +9,6 @@
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
-    "lhci": "./scripts/run-lhci.sh",
     "lint": "eslint \"src/**/*.{astro,ts,tsx,js,jsx}\"",
     "lint:fix": "npm run lint -- --fix",
     "format": "prettier --check \"**/*.{astro,ts,tsx,js,jsx,json,css}\"",
@@ -24,7 +23,6 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.4",
-    "@lhci/cli": "^0.14.0",
     "@types/node": "^24.6.2",
     "@typescript-eslint/eslint-plugin": "^8.18.0",
     "@typescript-eslint/parser": "^8.18.0",

@@ -106,13 +106,13 @@
 
 ## 🧠 Monitoring & Optimization
 
-### Configure Performance Budgets & CI Monitoring
-**Goal:** Automate performance testing with Lighthouse CI and WebPageTest thresholds.
+### Configure Performance Budgets & Monitoring
+**Goal:** Track performance budgets with WebPageTest automation and documented Lighthouse benchmarks.
 **Why:** Detects regressions early and enforces McMaster-Carr-level speed.
 **Subtasks:**
-- [ ] Add Lighthouse CI config targeting LCP < 1.5s, CLS < 0.05, INP < 200ms.
 - [ ] Set up WebPageTest script for key user flows (home → decade → year).
-- [ ] Integrate reports into GitHub PR checks with actionable output.
+- [ ] Document manual Lighthouse testing guidelines targeting LCP < 1.5s, CLS < 0.05, INP < 200ms.
+- [ ] Integrate WebPageTest reports into GitHub PR checks with actionable output.
 
 ### Implement Real User Monitoring Hooks
 **Goal:** Capture real-world performance metrics (LCP, INP) post-deployment.
