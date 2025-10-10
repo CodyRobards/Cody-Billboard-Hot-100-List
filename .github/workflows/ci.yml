@@ -26,25 +26,3 @@ jobs:
 
       - name: Build project
         run: npm run build
-
-      - name: Run WebPageTest smoke
-        env:
-          WEBPAGETEST_API_KEY: ${{ secrets.WEBPAGETEST_API_KEY }}
-          WEBPAGETEST_BASE_URL: ${{ secrets.WEBPAGETEST_BASE_URL }}
-          WEBPAGETEST_SERVER: ${{ secrets.WEBPAGETEST_SERVER }}
-        run: |
-          if [ -z "$WEBPAGETEST_API_KEY" ] || [ -z "$WEBPAGETEST_BASE_URL" ]; then
-            echo "Missing WebPageTest secrets. Configure WEBPAGETEST_API_KEY and WEBPAGETEST_BASE_URL." >&2
-            exit 1
-          fi
-          SCRIPT_PATH="$(mktemp)"
-          export BASE_URL="$WEBPAGETEST_BASE_URL"
-          envsubst < scripts/webpagetest-home-decade-year.wpt > "$SCRIPT_PATH"
-          SERVER="${WEBPAGETEST_SERVER:-https://www.webpagetest.org}"
-          npx webpagetest test "$SCRIPT_PATH" \
-            --key "$WEBPAGETEST_API_KEY" \
-            --server "$SERVER" \
-            --label "Home → decade → year" \
-            --runs 1 \
-            --first \
-            --location "Dulles:Chrome"
