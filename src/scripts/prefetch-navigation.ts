@@ -239,9 +239,26 @@
     contentRootEl.removeAttribute('tabindex');
   }
 
+  function executeScripts(container: HTMLElement) {
+    // Re-run both inline and external scripts, including type="module"
+    const scripts = Array.from(container.querySelectorAll('script'));
+    for (const old of scripts) {
+      const s = document.createElement('script');
+      // copy attributes exactly (type, src, defer, data-*, etc.)
+      for (const { name, value } of Array.from(old.attributes)) {
+        s.setAttribute(name, value);
+      }
+      // preserve inline content
+      if (old.textContent) s.textContent = old.textContent;
+      // Replace to trigger execution in the correct document context
+      old.replaceWith(s);
+    }
+  }
+
   function swapContent(entry: PageEntry) {
     syncHeadNodes(entry.headNodes);
     contentRootEl.innerHTML = entry.html;
+    executeScripts(contentRootEl);
     document.title = entry.title;
   }
 

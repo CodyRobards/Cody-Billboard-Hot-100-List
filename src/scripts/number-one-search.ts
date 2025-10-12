@@ -104,13 +104,17 @@
     const notesMarkup = notes ? `<ul class="number-one-search-results__notes">${notes}</ul>` : '';
     const yearsLabel = entry.appearances.map((appearance) => appearance.year).join(', ');
     const recapLinks = entry.appearances
-      .map((appearance) =>
-        `
-          <a href="/years/${appearance.slug}/" class="number-one-search-results__link number-one-search-results__link--pill">
-            View ${appearance.year} Recap 
-          </a>
-        `.trim()
-      )
+      .map((appearance, index) => {
+        const separator =
+          index > 0
+            ? '<span class="number-one-search-results__separator" aria-hidden="true"> | </span>'
+            : '';
+        return `
+          <span class="number-one-search-results__recap-item">
+            ${separator}<a class="number-one-search-results__link number-one-search-results__link--pill" href="/years/${appearance.slug}/">View ${appearance.year} Recap</a>
+          </span>
+        `.trim();
+      })
       .join('');
 
     const spotifyMarkup = entry.spotifyTrackId
@@ -129,17 +133,19 @@
       : '';
 
     li.innerHTML = `
-      <div class="number-one-search-results__content">
-        <div class="number-one-search-results__header">
-          <span class="number-one-search-results__year">${yearsLabel}</span>
-          <h3 class="number-one-search-results__title">“${entry.title}”</h3>
-          <p class="number-one-search-results__artist">by <a class="number-one-search-results__artist-link" href="/search/?q=${encodeURIComponent(entry.artist)}">${entry.artist}</a></p>
-        </div>
-        ${notesMarkup}
-        <div class="number-one-search-results__actions">
-          ${recapLinks}
-          ${spotifyMarkup}
-        </div>
+      <header class="number-one-search-results__header">
+        <span class="number-one-search-results__year">${yearsLabel}</span>
+        <h3 class="number-one-search-results__title">
+          <span class="number-one-search-results__song">“${entry.title}”</span>
+          <span class="number-one-search-results__artist">
+            by <a class="number-one-search-results__artist-link" href="/search/?q=${encodeURIComponent(entry.artist)}">${entry.artist}</a>
+          </span>
+        </h3>
+      </header>
+      ${notesMarkup}
+      <div class="number-one-search-results__actions">
+        <div class="number-one-search-results__recaps">${recapLinks}</div>
+        ${spotifyMarkup}
       </div>
     `;
     return li;
