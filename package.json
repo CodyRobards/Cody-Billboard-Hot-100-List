@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "astro dev",
     "start": "astro dev",
-    "build": "astro build",
+    "build": "npm run validate:album-art && astro build",
     "preview": "astro preview",
     "astro": "astro",
     "lint": "eslint \"src/**/*.{astro,ts,tsx,js,jsx}\"",
@@ -14,12 +14,17 @@
     "format": "prettier --check \"**/*.{astro,ts,tsx,js,jsx,json,css}\"",
     "format:fix": "prettier --write \"**/*.{astro,ts,tsx,js,jsx,json,css}\"",
     "prepare": "husky",
-    "test": "vitest run"
+    "test": "vitest run",
+    "fetch:album-art": "tsx scripts/fetch-album-art.ts",
+    "resize:album-art": "node scripts/resize-album-art.js",
+    "validate:album-art": "tsx scripts/validate-album-art.ts"
   },
   "dependencies": {
     "@astrojs/critters": "npm:astro-critters@^2.2.1",
     "@astrojs/mdx": "^4.3.6",
-    "astro": "^5.14.1"
+    "astro": "^5.14.1",
+    "gray-matter": "^4.0.3",
+    "sharp": "^0.34.4"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.4",
@@ -34,7 +39,7 @@
     "lint-staged": "^16.2.3",
     "prettier": "^3.4.2",
     "prettier-plugin-astro": "^0.14.1",
-    "ts-node": "^10.9.2",
+    "tsx": "^4.20.6",
     "typescript": "^5.9.3",
     "vitest": "^3.2.4",
     "webpagetest": "^0.7.6",

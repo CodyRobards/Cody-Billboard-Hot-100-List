@@ -10,8 +10,8 @@
     "src",
     "astro.config.mjs",
     "src/env.d.ts",
-    "scripts/sync-spotify-playlist.mjs",
-    "scripts/fetch-album-art.ts"
+    "scripts/**/*.ts",
+    "scripts/sync-spotify-playlist.mjs"
   ],
   "exclude": ["dist"]
 }

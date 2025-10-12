@@ -9,7 +9,11 @@ performs well on mid-tier mobile devices as well as desktop browsers.
 ## Directory Structure
 - `astro.config.mjs` – Astro configuration used to control routing, image optimization, and integration settings.
 - `public/` – Static assets (favicons, shared imagery, fonts) served directly by Astro without transformation.
+- `public/images/covers/` – Generated 80×80 thumbnails for every album cover, produced by `npm run resize:album-art`.
+- `public/images/placeholder.webp` – Reusable fallback image used only when artwork has not been sourced yet.
 - `src/` – Application source code. Within `src/pages/` you will find the statically generated routes that surface chart data.
+- `raw-album-art/` – Raw album art downloads (one per track) fetched directly from Wikimedia prior to optimization.
+- `scripts/cache/` – Shared cache artifacts including `wiki-art.json` (fetch/resizing metadata) and the cover manifest.
 - `.github/` – Issue templates, CODEOWNERS map, and CI workflows (`ci.yml`) that enforce linting and build checks on every push
   and pull request.
 - `.husky/` – Local Git hooks that run `lint-staged` to keep formatting and lint rules consistent before each commit.
@@ -39,11 +43,37 @@ performs well on mid-tier mobile devices as well as desktop browsers.
 
 ## Development Scripts
 - `npm run dev` – Launch the Astro dev server for local iteration.
-- `npm run build` – Generate the production build output.
+- `npm run build` – Generate the production build output after validating album artwork coverage.
 - `npm run preview` – Serve the last build locally to validate production output.
 - `npm run lint` / `npm run lint:fix` – Run ESLint across `src/**/*.{astro,ts,tsx,js,jsx}` with an option to auto-fix issues.
 - `npm run format` / `npm run format:fix` – Check or rewrite formatting with Prettier across Astro, TypeScript, JavaScript,
   JSON, and CSS files.
+- `npm run fetch:album-art` – Use the Wikimedia API (via `tsx`) to populate `raw-album-art/` and the persistent `wiki-art.json` cache.
+- `npm run resize:album-art` – Generate 80×80 WebP and AVIF thumbnails with Sharp and refresh the slug → asset manifest.
+- `npm run validate:album-art` – Ensure every Spotify/MDX track has optimized artwork (no placeholders) before builds succeed.
+
+### Album Art Workflow & Refresh Guidance
+Album art is sourced from Wikimedia and cached locally to avoid repeated requests. To fully refresh assets:
+
+1. Fetch raw images (respecting Wikimedia's rate limits of roughly one request every 750ms):
+   ```bash
+   npm run fetch:album-art -- [--resume] [--limit <count>] [--skip-existing]
+   ```
+   - `--resume` skips entries already marked as successful in `scripts/cache/wiki-art.json`.
+   - `--limit` constrains the number of new downloads in a single run (helpful when testing or pacing requests).
+   - `--skip-existing` leaves any raw downloads already on disk untouched.
+2. Resize and optimize thumbnails:
+   ```bash
+   npm run resize:album-art
+   ```
+3. Validate coverage (also happens automatically during `npm run build`):
+   ```bash
+   npm run validate:album-art
+   ```
+
+`scripts/cache/wiki-art.json` records the canonical state for each track—source metadata, last fetched/resized/validated timestamps,
+and optimized paths—while `scripts/cache/cover-manifest.json` exposes a machine-readable slug → thumbnail mapping for other tooling.
+Run the workflow whenever new tracks are introduced or when artwork needs a manual refresh.
 
 ## Linting, Formatting, and Pre-commit Tooling
 - ESLint is configured via `.eslintrc.cjs` and integrated into CI for consistency.

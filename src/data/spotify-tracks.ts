@@ -3498,6 +3498,8 @@ const tracks: SpotifyTrackEntry[] = [
   },
 ];
 
+export const spotifyTracks = tracks;
+
 export const spotifyTrackMap = new Map(
   tracks.map((track) => [createKey(track.title, track.artist), track] as const)
 );

@@ -1,556 +1,494 @@
-import fs from 'node:fs/promises';
+import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import process from 'node:process';
+import { setTimeout as delay } from 'node:timers/promises';
+import matter from 'gray-matter';
 
-const API_ENDPOINT = 'https://en.wikipedia.org/w/api.php';
-const MIME_PREFIX = 'image/';
+import { spotifyTracks } from '../src/data/spotify-tracks.js';
 
-const COVER_KEYWORDS = [
-  { keyword: 'album cover', weight: 260 },
-  { keyword: 'single cover', weight: 250 },
-  { keyword: 'cover art', weight: 240 },
-  { keyword: 'cd cover', weight: 220 },
-  { keyword: 'vinyl cover', weight: 220 },
-  { keyword: 'front cover', weight: 230 },
-  { keyword: 'front sleeve', weight: 200 },
-  { keyword: 'cover', weight: 210 },
-  { keyword: 'album', weight: 120 },
-  { keyword: 'single', weight: 110 },
-  { keyword: 'front', weight: 150 },
-  { keyword: 'sleeve', weight: 140 },
-  { keyword: 'jacket', weight: 130 },
-  { keyword: 'artwork', weight: 120 },
-  { keyword: 'picture sleeve', weight: 210 },
-];
+type TrackSource = 'spotify' | 'number-one';
 
-const SUPPORTING_KEYWORDS = [
-  { keyword: 'promo', weight: 35 },
-  { keyword: 'cassette', weight: 45 },
-  { keyword: '7"', weight: 30 },
-  { keyword: '7-inch', weight: 30 },
-  { keyword: '12"', weight: 35 },
-  { keyword: '12-inch', weight: 35 },
-  { keyword: 'compact disc', weight: 40 },
-  { keyword: 'picture disc', weight: 45 },
-  { keyword: 'record sleeve', weight: 120 },
-];
-
-const NEGATIVE_KEYWORDS = [
-  { keyword: 'logo', weight: -200 },
-  { keyword: 'band', weight: -80 },
-  { keyword: 'group', weight: -80 },
-  { keyword: 'live', weight: -160 },
-  { keyword: 'concert', weight: -150 },
-  { keyword: 'performance', weight: -120 },
-  { keyword: 'back cover', weight: -120 },
-  { keyword: 'back sleeve', weight: -120 },
-  { keyword: 'reverse', weight: -110 },
-  { keyword: 'poster', weight: -80 },
-  { keyword: 'ticket', weight: -90 },
-  { keyword: 'lyrics', weight: -90 },
-  { keyword: 'chart', weight: -70 },
-  { keyword: 'map', weight: -100 },
-  { keyword: 'booklet', weight: -60 },
-  { keyword: 'photo', weight: -40 },
-  { keyword: 'press', weight: -40 },
-  { keyword: 'signature', weight: -60 },
-];
-
-const IMAGE_TYPE_BONUS: Record<string, number> = {
-  'image/jpeg': 25,
-  'image/jpg': 25,
-  'image/png': 10,
-};
-
-const IMAGE_TYPE_PENALTY: Record<string, number> = {
-  'image/svg+xml': -40,
-  'image/gif': -20,
-};
-
-const DEFAULT_LOGGER: Required<Pick<Console, 'debug' | 'info' | 'warn'>> = {
-  debug: (...args: unknown[]) => console.debug(...args),
-  info: (...args: unknown[]) => console.info(...args),
-  warn: (...args: unknown[]) => console.warn(...args),
-};
-
-type Logger = typeof DEFAULT_LOGGER;
-
-interface ExtMetadataValue {
-  value?: string;
+interface TrackSummary {
+  title: string;
+  artist: string;
+  slug: string;
+  source: TrackSource;
+  year?: number;
 }
 
-interface MediaWikiImageInfo {
-  url: string;
-  mime?: string;
-  extmetadata?: Record<string, ExtMetadataValue>;
+interface WikiArtEntry {
+  title: string;
+  artist: string;
+  slug: string;
+  source: TrackSource;
+  year?: number;
+  status: 'pending' | 'ok' | 'missing' | 'skipped';
+  note?: string;
+  wikiPage?: string;
+  imageUrl?: string;
+  rawFile?: string;
+  optimized?: {
+    webp?: string;
+    avif?: string;
+  };
+  lastFetched?: string;
+  lastResized?: string;
+  lastValidated?: string;
+  updatedAt?: string;
+  error?: string;
 }
 
-interface MediaWikiImage {
+interface WikiArtCache {
+  meta: {
+    lastFetchRun: string | null;
+    lastResizeRun: string | null;
+    lastValidationRun: string | null;
+  };
+  entries: Record<string, WikiArtEntry>;
+}
+
+interface WikimediaPage {
+  pageid?: number;
+  index?: number;
+  fullurl?: string;
+  original?: { source?: string };
+  pageprops?: Record<string, string>;
+  images?: WikimediaImageListing[];
+}
+
+interface WikimediaImageListing {
   title: string;
 }
 
-interface MediaWikiPage {
-  pageid: number;
-  title: string;
-  images?: MediaWikiImage[];
+interface WikimediaImageInfoPage {
+  imageinfo?: { url?: string }[];
 }
 
-export interface PickedImage {
-  title: string;
-  url: string;
-  mime: string;
-  score: number;
-  isCoverLike: boolean;
-  metadataText: string;
+interface WikimediaQueryResponse<T> {
+  query?: {
+    pages?: Record<string, T>;
+  };
 }
 
-export interface PickImageOptions {
-  logger?: Logger;
-  fetchFn?: typeof fetch;
-}
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const ROOT_DIR = path.resolve(__dirname, '..');
+const RAW_DIR = path.resolve(ROOT_DIR, 'raw-album-art');
+const CACHE_PATH = path.resolve(ROOT_DIR, 'scripts/cache/wiki-art.json');
+const YEARS_DIR = path.resolve(ROOT_DIR, 'src/content/years');
 
-async function queryMediaWiki<T>(
-  params: Record<string, string>,
-  fetchFn: typeof fetch
-): Promise<T> {
+const RATE_LIMIT_MS = 750;
+const MAX_RETRIES = 4;
+const RETRY_BASE_DELAY = 400;
+const SEARCH_RESULTS_LIMIT = 5;
+
+const normalize = (value: string) => value.trim().toLowerCase().replace(/\s+/g, ' ');
+
+const slugify = (title: string, artist: string) =>
+  `${title} ${artist}`
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '');
+
+const createKey = (title: string, artist: string) => `${normalize(title)}::${normalize(artist)}`;
+
+const ensureDir = async (target: string) => {
+  await fs.mkdir(target, { recursive: true });
+};
+
+const readJsonCache = async (): Promise<WikiArtCache> => {
+  try {
+    const raw = await fs.readFile(CACHE_PATH, 'utf8');
+    return JSON.parse(raw) as WikiArtCache;
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+      return {
+        meta: {
+          lastFetchRun: null,
+          lastResizeRun: null,
+          lastValidationRun: null,
+        },
+        entries: {},
+      } satisfies WikiArtCache;
+    }
+
+    throw error;
+  }
+};
+
+const writeJsonCache = async (cache: WikiArtCache) => {
+  const serialized = `${JSON.stringify(cache, null, 2)}\n`;
+  await fs.writeFile(CACHE_PATH, serialized, 'utf8');
+};
+
+const gatherTracks = async (): Promise<TrackSummary[]> => {
+  const seen = new Map<string, TrackSummary>();
+
+  for (const entry of spotifyTracks) {
+    const key = createKey(entry.title, entry.artist);
+    if (!seen.has(key)) {
+      seen.set(key, {
+        title: entry.title,
+        artist: entry.artist,
+        slug: slugify(entry.title, entry.artist),
+        source: 'spotify',
+      });
+    }
+  }
+
+  try {
+    const files = await fs.readdir(YEARS_DIR);
+    for (const file of files) {
+      if (!file.endsWith('.mdx')) continue;
+      const filePath = path.join(YEARS_DIR, file);
+      const contents = await fs.readFile(filePath, 'utf8');
+      const parsed = matter(contents);
+      const numberOnes = parsed.data?.numberOnes as unknown;
+      if (!Array.isArray(numberOnes)) continue;
+
+      const year = typeof parsed.data?.year === 'number' ? parsed.data.year : undefined;
+
+      for (const item of numberOnes) {
+        if (!item || typeof item !== 'object') continue;
+        const title = 'title' in item ? String(item.title) : null;
+        const artist = 'artist' in item ? String(item.artist) : null;
+        if (!title || !artist) continue;
+        const key = createKey(title, artist);
+        if (!seen.has(key)) {
+          seen.set(key, {
+            title,
+            artist,
+            slug: slugify(title, artist),
+            source: 'number-one',
+            year,
+          });
+        }
+      }
+    }
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
+      throw error;
+    }
+  }
+
+  return Array.from(seen.values()).sort((a, b) => a.slug.localeCompare(b.slug));
+};
+
+const rateLimiter = (() => {
+  let nextAvailable = Date.now();
+  return async () => {
+    const now = Date.now();
+    if (now < nextAvailable) {
+      await delay(nextAvailable - now);
+    }
+    nextAvailable = Date.now() + RATE_LIMIT_MS;
+  };
+})();
+
+const withRetries = async <T>(operation: () => Promise<T>): Promise<T> => {
+  let attempt = 0;
+  let lastError: unknown;
+  while (attempt <= MAX_RETRIES) {
+    try {
+      return await operation();
+    } catch (error) {
+      lastError = error;
+      attempt += 1;
+      if (attempt > MAX_RETRIES) break;
+      const delayMs = RETRY_BASE_DELAY * 2 ** (attempt - 1);
+      await delay(delayMs + Math.random() * 150);
+    }
+  }
+  throw lastError;
+};
+
+const callWikimedia = async <T = unknown>(params: Record<string, string>): Promise<T> => {
   const searchParams = new URLSearchParams({
     format: 'json',
-    formatversion: '2',
+    origin: '*',
+    redirects: '1',
     ...params,
   });
+  const url = `https://en.wikipedia.org/w/api.php?${searchParams.toString()}`;
+  await rateLimiter();
+  const response = await withRetries(async () => {
+    const res = await fetch(url, {
+      headers: { 'User-Agent': 'Billboard-Hot-100-Art-Fetcher/1.0' },
+    });
+    if (!res.ok) {
+      throw new Error(`Wikimedia request failed: ${res.status} ${res.statusText}`);
+    }
+    return res.json();
+  });
+  return response as T;
+};
 
-  const response = await fetchFn(`${API_ENDPOINT}?${searchParams.toString()}`);
-  if (!response.ok) {
-    throw new Error(`MediaWiki request failed with ${response.status} ${response.statusText}`);
-  }
-
-  return (await response.json()) as T;
-}
-
-async function fetchPageByTitle(
-  title: string,
-  fetchFn: typeof fetch
-): Promise<MediaWikiPage | undefined> {
-  interface QueryResponse {
-    query?: {
-      pages?: MediaWikiPage[];
+const pickImageFromPage = async (
+  page: WikimediaPage
+): Promise<{ imageUrl: string; pageUrl?: string } | null> => {
+  if (page?.original?.source) {
+    return {
+      imageUrl: page.original.source as string,
+      pageUrl: page.fullurl as string | undefined,
     };
   }
 
-  const data = await queryMediaWiki<QueryResponse>(
-    {
-      action: 'query',
-      redirects: '1',
-      prop: 'images',
-      imlimit: 'max',
-      titles: title,
-    },
-    fetchFn
-  );
+  if (!page?.pageid) return null;
 
-  const page = data.query?.pages?.[0];
-  if (!page || (page as unknown as { missing?: string }).missing) {
-    return undefined;
-  }
+  const imageQuery = await callWikimedia<WikimediaQueryResponse<WikimediaPage>>({
+    action: 'query',
+    prop: 'images',
+    pageids: String(page.pageid),
+  });
 
-  return page;
-}
+  const pageKey = String(page.pageid);
+  const images = imageQuery.query?.pages?.[pageKey]?.images;
+  if (!images?.length) return null;
 
-async function fetchImageInfo(
-  title: string,
-  fetchFn: typeof fetch,
-  logger: Logger
-): Promise<MediaWikiImageInfo | undefined> {
-  interface ImageInfoResponse {
-    query?: {
-      pages?: {
-        imageinfo?: MediaWikiImageInfo[];
-      }[];
-    };
-  }
+  const preference = (title: string) => {
+    const normalized = title.toLowerCase();
+    if (normalized.includes('cover')) return 0;
+    if (normalized.includes('album')) return 1;
+    if (normalized.includes('front')) return 2;
+    return 3;
+  };
 
-  try {
-    const data = await queryMediaWiki<ImageInfoResponse>(
-      {
+  const preferred = images
+    .map((img) => img.title)
+    .filter((title) => typeof title === 'string')
+    .sort((a, b) => preference(a) - preference(b));
+
+  for (const imageTitle of preferred) {
+    if (!imageTitle.startsWith('File:')) continue;
+    try {
+      const details = await callWikimedia<WikimediaQueryResponse<WikimediaImageInfoPage>>({
         action: 'query',
         prop: 'imageinfo',
-        titles: title,
-        iiprop: 'url|mime|extmetadata',
-      },
-      fetchFn
-    );
-
-    const info = data.query?.pages?.[0]?.imageinfo?.[0];
-    if (!info?.url || !info.mime) {
-      logger.debug(`Skipping ${title} because it lacks imageinfo url or mime.`);
-      return undefined;
-    }
-
-    return info;
-  } catch (error) {
-    logger.warn(`Failed to fetch imageinfo for ${title}: ${(error as Error).message}`);
-    return undefined;
-  }
-}
-
-function normalizeText(value: string | undefined): string {
-  return (
-    value
-      ?.toLowerCase()
-      .replace(/<[^>]+>/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim() ?? ''
-  );
-}
-
-function buildMetadataText(title: string, info: MediaWikiImageInfo): string {
-  const pieces = new Set<string>();
-  pieces.add(normalizeText(title.replace(/^File:/i, '').replace(/[_-]+/g, ' ')));
-
-  if (info.extmetadata) {
-    const fields = [
-      'ObjectName',
-      'ImageDescription',
-      'Categories',
-      'Credit',
-      'LicenseShortName',
-      'LicenseUrl',
-    ];
-    for (const field of fields) {
-      const value = normalizeText(info.extmetadata[field]?.value);
-      if (value) {
-        pieces.add(value);
+        titles: imageTitle,
+        iiprop: 'url|mime',
+        iiurlwidth: '1024',
+      });
+      const pageInfo = details.query?.pages;
+      if (!pageInfo) continue;
+      const fileInfo = Object.values(pageInfo)[0];
+      const info = Array.isArray(fileInfo?.imageinfo) ? fileInfo.imageinfo[0] : undefined;
+      if (info?.url) {
+        return { imageUrl: info.url as string, pageUrl: page.fullurl as string | undefined };
       }
+    } catch (error) {
+      console.warn(`Failed to inspect image ${imageTitle}:`, error);
     }
   }
 
-  return Array.from(pieces).join(' ').replace(/\s+/g, ' ').trim();
-}
+  return null;
+};
 
-function scoreCandidate(
-  metadataText: string,
-  mime: string
-): { score: number; isCoverLike: boolean } {
-  let score = 0;
-  let isCoverLike = false;
+const findImageForTrack = async (
+  track: TrackSummary
+): Promise<{ imageUrl: string; pageUrl?: string } | null> => {
+  const baseQuery = `${track.title} ${track.artist}`;
+  const searchTerms = [
+    `${baseQuery} single cover art`,
+    `${baseQuery} album cover`,
+    `${baseQuery} cover art`,
+  ];
 
-  const text = metadataText;
-
-  for (const { keyword, weight } of COVER_KEYWORDS) {
-    if (text.includes(keyword)) {
-      score += weight;
-      if (
-        keyword.includes('cover') ||
-        keyword === 'album' ||
-        keyword === 'single' ||
-        keyword === 'front' ||
-        keyword === 'sleeve' ||
-        keyword === 'jacket' ||
-        keyword === 'artwork'
-      ) {
-        isCoverLike = true;
-      }
-    }
-  }
-
-  for (const { keyword, weight } of SUPPORTING_KEYWORDS) {
-    if (text.includes(keyword)) {
-      score += weight;
-    }
-  }
-
-  for (const { keyword, weight } of NEGATIVE_KEYWORDS) {
-    if (text.includes(keyword)) {
-      score += weight;
-      if (keyword === 'back cover' || keyword === 'back sleeve' || keyword === 'reverse') {
-        isCoverLike = false;
-      }
-    }
-  }
-
-  score += IMAGE_TYPE_BONUS[mime] ?? 0;
-  score += IMAGE_TYPE_PENALTY[mime] ?? 0;
-
-  if (isCoverLike) {
-    score += 120;
-  }
-
-  return { score, isCoverLike };
-}
-
-function extensionFromMime(mime: string): string {
-  if (mime === 'image/jpeg' || mime === 'image/jpg') {
-    return '.jpg';
-  }
-  if (mime === 'image/png') {
-    return '.png';
-  }
-  if (mime === 'image/webp') {
-    return '.webp';
-  }
-  if (mime === 'image/gif') {
-    return '.gif';
-  }
-  if (mime === 'image/svg+xml') {
-    return '.svg';
-  }
-  return '';
-}
-
-async function downloadImage(
-  image: PickedImage,
-  destinationDir: string,
-  slug: string,
-  fetchFn: typeof fetch,
-  logger: Logger
-): Promise<string | undefined> {
-  const extension = extensionFromMime(image.mime);
-  if (!extension) {
-    logger.warn(`Cannot determine file extension for ${image.mime}; skipping download.`);
-    return undefined;
-  }
-
-  const targetPath = path.join(destinationDir, `${slug}${extension}`);
-  const response = await fetchFn(image.url);
-  if (!response.ok) {
-    logger.warn(`Failed to download ${image.url}: ${response.status} ${response.statusText}`);
-    return undefined;
-  }
-
-  const arrayBuffer = await response.arrayBuffer();
-  await fs.mkdir(destinationDir, { recursive: true });
-  await fs.writeFile(targetPath, Buffer.from(arrayBuffer));
-  return targetPath;
-}
-
-export async function pickImageFromPage(
-  page: MediaWikiPage,
-  options: PickImageOptions = {}
-): Promise<PickedImage | undefined> {
-  const fetchFn = options.fetchFn ?? fetch;
-  const logger = options.logger ?? DEFAULT_LOGGER;
-
-  if (!page.images || page.images.length === 0) {
-    logger.warn(`No images available on Wikipedia page ${page.title}.`);
-    return undefined;
-  }
-
-  const candidates: PickedImage[] = [];
-  for (const image of page.images) {
-    if (!image.title.startsWith('File:')) {
-      continue;
-    }
-
-    const info = await fetchImageInfo(image.title, fetchFn, logger);
-    if (!info) {
-      continue;
-    }
-
-    const mime = info.mime?.toLowerCase() ?? '';
-    if (!mime.startsWith(MIME_PREFIX)) {
-      logger.debug(`Skipping ${image.title} because mime ${mime} is not an image.`);
-      continue;
-    }
-
-    const metadataText = buildMetadataText(image.title, info);
-    const { score, isCoverLike } = scoreCandidate(metadataText, mime);
-
-    candidates.push({
-      title: image.title,
-      url: info.url,
-      mime,
-      score,
-      isCoverLike,
-      metadataText,
+  for (const term of searchTerms) {
+    const result = await callWikimedia<WikimediaQueryResponse<WikimediaPage>>({
+      action: 'query',
+      prop: 'pageimages|info|pageprops',
+      generator: 'search',
+      gsrlimit: String(SEARCH_RESULTS_LIMIT),
+      gsrsearch: term,
+      piprop: 'original',
+      inprop: 'url',
     });
-  }
 
-  if (candidates.length === 0) {
-    logger.warn(`No usable image candidates found for ${page.title}.`);
-    return undefined;
-  }
+    const pages = result.query?.pages;
+    if (!pages) continue;
 
-  const coverCandidates = candidates.filter((candidate) => candidate.isCoverLike);
-  const fallbackCandidates = candidates.filter((candidate) => !candidate.isCoverLike);
+    const candidates = Object.values(pages)
+      .filter((value): value is WikimediaPage => Boolean(value))
+      .sort((a, b) => (a.index ?? 0) - (b.index ?? 0));
 
-  if (coverCandidates.length > 0) {
-    coverCandidates.sort((a, b) => b.score - a.score);
-    return coverCandidates[0];
-  }
+    for (const page of candidates) {
+      const picked = await pickImageFromPage(page);
+      if (picked) return picked;
 
-  fallbackCandidates.sort((a, b) => b.score - a.score);
-  const fallback = fallbackCandidates[0];
-  if (fallback) {
-    logger.warn(
-      `No cover-like images found for ${page.title}; best remaining candidate ${fallback.title} is not cover art. Keeping placeholder unless caller accepts fallback.`
-    );
-    return fallback;
-  }
-
-  logger.warn(`No acceptable image found for ${page.title}.`);
-  return undefined;
-}
-
-function slugify(input: string): string {
-  return input
-    .normalize('NFKD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[\u2019']/g, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-}
-
-async function fetchAndMaybeDownload(
-  pageTitle: string,
-  destinationDir: string | undefined,
-  fetchFn: typeof fetch,
-  logger: Logger
-): Promise<void> {
-  let page: MediaWikiPage | undefined;
-  try {
-    page = await fetchPageByTitle(pageTitle, fetchFn);
-  } catch (error) {
-    logger.warn(`Failed to load Wikipedia page for ${pageTitle}: ${(error as Error).message}`);
-    return;
-  }
-
-  if (!page) {
-    logger.warn(`Could not load Wikipedia page for ${pageTitle}.`);
-    return;
-  }
-
-  const picked = await pickImageFromPage(page, { fetchFn, logger });
-  if (!picked) {
-    return;
-  }
-
-  if (!picked.isCoverLike) {
-    logger.warn(
-      `Best available image for ${page.title} (${picked.title}) is not marked as cover art; skipping download to keep placeholder.`
-    );
-    return;
-  }
-
-  logger.info(`Selected image ${picked.title} (score ${picked.score}) for ${page.title}`);
-
-  if (!destinationDir) {
-    return;
-  }
-
-  const savedPath = await downloadImage(
-    picked,
-    destinationDir,
-    `${slugify(page.title)}-${slugify(picked.title.replace(/^File:/i, ''))}`,
-    fetchFn,
-    logger
-  );
-
-  if (savedPath) {
-    logger.info(`Saved ${page.title} artwork to ${savedPath}`);
-  }
-}
-
-function parseCliArguments(argv: string[]): {
-  downloadDir?: string;
-  pages: string[];
-} {
-  const pages: string[] = [];
-  let downloadDir: string | undefined;
-
-  for (let index = 0; index < argv.length; index += 1) {
-    const value = argv[index];
-    if (value === '--download' || value === '-d') {
-      downloadDir = path.join(ROOT_DIR, '.cache', 'album-art');
-      continue;
+      const pageProps = page?.pageprops;
+      const albumTitle = pageProps?.disambiguation ? undefined : pageProps?.wikibase_item;
+      if (albumTitle) {
+        try {
+          const sitelinks = await callWikimedia<{
+            entities?: Record<string, { sitelinks?: { enwiki?: { title?: string } } }>;
+          }>({
+            action: 'wbgetentities',
+            format: 'json',
+            ids: albumTitle,
+            props: 'sitelinks',
+          });
+          const enwiki = sitelinks.entities?.[albumTitle]?.sitelinks?.enwiki?.title;
+          if (enwiki) {
+            const followUp = await callWikimedia<WikimediaQueryResponse<WikimediaPage>>({
+              action: 'query',
+              prop: 'pageimages|info',
+              titles: enwiki,
+              piprop: 'original',
+              inprop: 'url',
+            });
+            const followPages = followUp.query?.pages;
+            if (followPages) {
+              const followEntry = Object.values(followPages)[0];
+              const pickedFollow = await pickImageFromPage(followEntry);
+              if (pickedFollow) return pickedFollow;
+            }
+          }
+        } catch (error) {
+          console.warn(`Failed to follow album entity for ${track.title}:`, error);
+        }
+      }
     }
+  }
 
-    if (value === '--download-dir') {
-      downloadDir = argv[index + 1]
-        ? path.resolve(argv[index + 1]!)
-        : path.join(ROOT_DIR, '.cache', 'album-art');
-      index += 1;
-      continue;
+  return null;
+};
+
+const downloadImage = async (url: string, destination: string) => {
+  await rateLimiter();
+  const buffer = await withRetries(async () => {
+    const response = await fetch(url, {
+      headers: { 'User-Agent': 'Billboard-Hot-100-Art-Fetcher/1.0' },
+    });
+    if (!response.ok) {
+      throw new Error(`Failed to download image: ${response.status} ${response.statusText}`);
     }
-
-    pages.push(value);
-  }
-
-  return { pages, downloadDir };
-}
-
-const ROOT_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
-
-async function runCli() {
-  const { pages, downloadDir } = parseCliArguments(process.argv.slice(2));
-  const logger = DEFAULT_LOGGER;
-  const fetchFn = fetch;
-
-  if (pages.length === 0) {
-    logger.info('Usage: ts-node scripts/fetch-album-art.ts [--download] "Page Title" ...');
-    logger.info(
-      'Example: ts-node scripts/fetch-album-art.ts --download "Bad Day (Daniel Powter song)"'
-    );
-    return;
-  }
-
-  if (downloadDir) {
-    await fs.mkdir(downloadDir, { recursive: true });
-  }
-
-  for (const pageTitle of pages) {
-    logger.info(`\nFetching album art for ${pageTitle}...`);
-    await fetchAndMaybeDownload(pageTitle, downloadDir, fetchFn, logger);
-  }
-}
-
-if (process.argv[1] && process.argv[1] === fileURLToPath(import.meta.url)) {
-  runCli().catch((error) => {
-    console.error(error);
-    process.exitCode = 1;
+    const arrayBuffer = await response.arrayBuffer();
+    return Buffer.from(arrayBuffer);
   });
-}
+  await fs.writeFile(destination, buffer);
+};
 
-export async function fetchAlbumArtForPage(
-  pageTitle: string,
-  options: PickImageOptions & {
-    downloadDir?: string;
-  } = {}
-): Promise<PickedImage | undefined> {
-  const fetchFn = options.fetchFn ?? fetch;
-  const logger = options.logger ?? DEFAULT_LOGGER;
-  let page: MediaWikiPage | undefined;
-  try {
-    page = await fetchPageByTitle(pageTitle, fetchFn);
-  } catch (error) {
-    logger.warn(`Failed to load Wikipedia page for ${pageTitle}: ${(error as Error).message}`);
-    return undefined;
+const parseArgs = () => {
+  const args = process.argv.slice(2);
+  let resume = false;
+  let skipExisting = false;
+  let limit: number | null = null;
+
+  for (let i = 0; i < args.length; i += 1) {
+    const arg = args[i];
+    if (arg === '--resume') {
+      resume = true;
+    } else if (arg === '--skip-existing') {
+      skipExisting = true;
+    } else if (arg === '--limit') {
+      const value = Number(args[i + 1]);
+      if (Number.isFinite(value) && value > 0) {
+        limit = value;
+      }
+      i += 1;
+    } else if (arg.startsWith('--limit=')) {
+      const value = Number(arg.split('=')[1]);
+      if (Number.isFinite(value) && value > 0) {
+        limit = value;
+      }
+    }
   }
 
-  if (!page) {
-    logger.warn(`Could not load Wikipedia page for ${pageTitle}.`);
-    return undefined;
+  return { resume, skipExisting, limit };
+};
+
+const ensureEntry = (cache: WikiArtCache, track: TrackSummary) => {
+  if (!cache.entries[track.slug]) {
+    cache.entries[track.slug] = {
+      title: track.title,
+      artist: track.artist,
+      slug: track.slug,
+      source: track.source,
+      year: track.year,
+      status: 'pending',
+    } satisfies WikiArtEntry;
+  }
+  return cache.entries[track.slug];
+};
+
+const main = async () => {
+  await ensureDir(RAW_DIR);
+
+  const { resume, skipExisting, limit } = parseArgs();
+  const cache = await readJsonCache();
+  const tracks = await gatherTracks();
+
+  let processed = 0;
+  for (const track of tracks) {
+    if (limit !== null && processed >= limit) {
+      break;
+    }
+
+    const entry = ensureEntry(cache, track);
+    const existingRawFile = entry.rawFile ? path.resolve(ROOT_DIR, entry.rawFile) : null;
+
+    const hasRawFile = existingRawFile
+      ? await fs
+          .access(existingRawFile)
+          .then(() => true)
+          .catch(() => false)
+      : false;
+
+    if (resume && entry.status === 'ok' && hasRawFile) {
+      continue;
+    }
+
+    if (skipExisting && hasRawFile) {
+      entry.status = 'skipped';
+      entry.note = 'Skipped existing raw asset';
+      entry.updatedAt = new Date().toISOString();
+      continue;
+    }
+
+    try {
+      const result = await findImageForTrack(track);
+      if (!result) {
+        entry.status = 'missing';
+        entry.error = 'No image located via Wikimedia API';
+        entry.updatedAt = new Date().toISOString();
+        console.warn(`No art found for ${track.title} — ${track.artist}`);
+        continue;
+      }
+
+      const imageUrl = result.imageUrl;
+      const extension = path.extname(new URL(imageUrl).pathname) || '.jpg';
+      const fileName = `${track.slug}${extension}`;
+      const destination = path.join(RAW_DIR, fileName);
+      await downloadImage(imageUrl, destination);
+
+      const relativeRawPath = path.relative(ROOT_DIR, destination);
+
+      entry.status = 'ok';
+      entry.imageUrl = imageUrl;
+      entry.wikiPage = result.pageUrl;
+      entry.rawFile = relativeRawPath;
+      entry.lastFetched = new Date().toISOString();
+      entry.updatedAt = entry.lastFetched;
+      delete entry.error;
+      delete entry.note;
+      processed += 1;
+      console.log(`Fetched artwork for ${track.title} — ${track.artist}`);
+    } catch (error) {
+      entry.status = 'missing';
+      entry.error = error instanceof Error ? error.message : String(error);
+      entry.updatedAt = new Date().toISOString();
+      console.error(`Failed to fetch ${track.title} — ${track.artist}:`, error);
+    }
   }
 
-  const picked = await pickImageFromPage(page, { fetchFn, logger });
-  if (!picked) {
-    return undefined;
-  }
+  cache.meta.lastFetchRun = new Date().toISOString();
+  await writeJsonCache(cache);
 
-  if (options.downloadDir && picked.isCoverLike) {
-    await downloadImage(
-      picked,
-      options.downloadDir,
-      `${slugify(page.title)}-${slugify(picked.title.replace(/^File:/i, ''))}`,
-      fetchFn,
-      logger
-    );
-  } else if (options.downloadDir) {
-    logger.warn(
-      `Best available image for ${page.title} (${picked.title}) is not cover art; download skipped to keep placeholder.`
-    );
-  }
+  console.log(`Processed ${processed} track${processed === 1 ? '' : 's'}.`);
+};
 
-  return picked;
-}
+main().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});
