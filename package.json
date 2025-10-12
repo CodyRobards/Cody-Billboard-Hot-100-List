@@ -34,6 +34,7 @@
     "lint-staged": "^16.2.3",
     "prettier": "^3.4.2",
     "prettier-plugin-astro": "^0.14.1",
+    "ts-node": "^10.9.2",
     "typescript": "^5.9.3",
     "vitest": "^3.2.4",
     "webpagetest": "^0.7.6",
