@@ -11,10 +11,15 @@ interface Props {
   items: NumberOneEntry[];
 }
 
+import { getAlbumArt } from "../lib/album-art";
 import { slugifyHeading } from "../lib/slugify";
 
 const { heading, description, items } = Astro.props as Props;
 const headingId = slugifyHeading(heading);
+const resolvedItems = items.map((entry) => ({
+  ...entry,
+  artwork: getAlbumArt(entry.title, entry.artist),
+}));
 ---
 
 <section class="article__table number-one-list__section" aria-labelledby={headingId}>
@@ -22,21 +27,35 @@ const headingId = slugifyHeading(heading);
   {description ? <p class="section__lead">{description}</p> : null}
   <ol class="number-one-list">
     {
-      items.map((entry) => (
+      resolvedItems.map((entry) => (
         <li class="number-one-list__item">
-          <div class="number-one-list__track">
-            <span class="number-one-list__title">
-              "{entry.title}"
-              <span class="number-one-list__artist">
-                {" by "}
-                <a
-                  class="number-one-list__artist-link"
-                  href={`/search/?q=${encodeURIComponent(entry.artist)}`}
-                >
-                  {entry.artist}
-                </a>
+          <div class="number-one-list__primary">
+            <picture class="number-one-list__artwork">
+              {entry.artwork.avif ? <source srcset={entry.artwork.avif} type="image/avif" /> : null}
+              <source srcset={entry.artwork.webp} type="image/webp" />
+              <img
+                src={entry.artwork.webp}
+                alt={entry.artwork.alt}
+                loading="lazy"
+                decoding="async"
+                width="96"
+                height="96"
+              />
+            </picture>
+            <div class="number-one-list__track">
+              <span class="number-one-list__title">
+                "{entry.title}"
+                <span class="number-one-list__artist">
+                  {" by "}
+                  <a
+                    class="number-one-list__artist-link"
+                    href={`/search/?q=${encodeURIComponent(entry.artist)}`}
+                  >
+                    {entry.artist}
+                  </a>
+                </span>
               </span>
-            </span>
+            </div>
           </div>
           {entry.notes && entry.notes.length ? (
             <ul class="number-one-list__notes">
@@ -70,19 +89,31 @@ const headingId = slugifyHeading(heading);
   .number-one-list__item {
     border-bottom: 1px solid var(--color-rule-soft, rgba(255, 255, 255, 0.12));
     padding-bottom: 1.25rem;
+    display: grid;
+    gap: 0.75rem;
   }
 
-  .number-one-list__header {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
+  .number-one-list__primary {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: clamp(0.75rem, 2vw, 1.25rem);
+    align-items: center;
   }
 
-  .number-one-list__position {
-    font-family: var(--font-heading, inherit);
-    font-weight: 700;
-    font-size: 1.125rem;
-    color: var(--color-accent, #8a2be2);
+  .number-one-list__artwork {
+    width: 96px;
+    height: 96px;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    flex-shrink: 0;
+    background: var(--color-rule-soft, rgba(255, 255, 255, 0.12));
+  }
+
+  .number-one-list__artwork img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
   }
 
   .number-one-list__track {
@@ -115,20 +146,28 @@ const headingId = slugifyHeading(heading);
 
   .number-one-list__notes {
     font-size: 0.95rem;
-    margin: 0.75rem 0 0 0;
+    margin: 0.5rem 0 0 0;
     padding: 0 0 0 1.25rem;
     display: grid;
     gap: 0.6rem;
     color: var(--color-muted, rgba(255, 255, 255, 0.72));
   }
 
+  @media (max-width: 32rem) {
+    .number-one-list__primary {
+      grid-template-columns: minmax(0, 1fr);
+      justify-items: start;
+    }
+
+    .number-one-list__artwork {
+      width: 82px;
+      height: 82px;
+    }
+  }
+
   @media (min-width: 48rem) {
     .number-one-list__item {
       padding-bottom: 1.75rem;
-    }
-
-    .number-one-list__position {
-      font-size: 1.25rem;
     }
 
     .number-one-list__title {
