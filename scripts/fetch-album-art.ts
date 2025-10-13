@@ -5,7 +5,7 @@ import process from 'node:process';
 import { setTimeout as delay } from 'node:timers/promises';
 import matter from 'gray-matter';
 
-import { spotifyTracks } from '../src/data/spotify-tracks.js';
+import { getSpotifyTrackId, spotifyTracks } from '../src/data/spotify-tracks.js';
 
 type TrackSource = 'spotify' | 'number-one';
 
@@ -17,7 +17,19 @@ interface TrackSummary {
   year?: number;
 }
 
-interface WikiArtEntry {
+interface SpotifyArtMetadata {
+  trackId?: string;
+  trackName?: string;
+  albumId?: string;
+  albumName?: string;
+  releaseDate?: string;
+  releaseDatePrecision?: string;
+  imageUrl?: string;
+  imageWidth?: number;
+  imageHeight?: number;
+}
+
+interface AlbumArtEntry {
   title: string;
   artist: string;
   slug: string;
@@ -25,8 +37,6 @@ interface WikiArtEntry {
   year?: number;
   status: 'pending' | 'ok' | 'missing' | 'skipped';
   note?: string;
-  wikiPage?: string;
-  imageUrl?: string;
   rawFile?: string;
   optimized?: {
     webp?: string;
@@ -37,38 +47,42 @@ interface WikiArtEntry {
   lastValidated?: string;
   updatedAt?: string;
   error?: string;
+  imageUrl?: string;
+  spotify?: SpotifyArtMetadata;
 }
 
-interface WikiArtCache {
+interface AlbumArtCache {
   meta: {
     lastFetchRun: string | null;
     lastResizeRun: string | null;
     lastValidationRun: string | null;
   };
-  entries: Record<string, WikiArtEntry>;
+  entries: Record<string, AlbumArtEntry>;
 }
 
-interface WikimediaPage {
-  pageid?: number;
-  index?: number;
-  fullurl?: string;
-  original?: { source?: string };
-  pageprops?: Record<string, string>;
-  images?: WikimediaImageListing[];
+interface SpotifyTokenResponse {
+  access_token: string;
+  expires_in?: number;
 }
 
-interface WikimediaImageListing {
-  title: string;
+interface SpotifyImage {
+  url?: string;
+  width?: number;
+  height?: number;
 }
 
-interface WikimediaImageInfoPage {
-  imageinfo?: { url?: string }[];
+interface SpotifyAlbum {
+  id?: string;
+  name?: string;
+  release_date?: string;
+  release_date_precision?: string;
+  images?: SpotifyImage[];
 }
 
-interface WikimediaQueryResponse<T> {
-  query?: {
-    pages?: Record<string, T>;
-  };
+interface SpotifyTrackResponse {
+  id?: string;
+  name?: string;
+  album?: SpotifyAlbum;
 }
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -77,10 +91,9 @@ const RAW_DIR = path.resolve(ROOT_DIR, 'raw-album-art');
 const CACHE_PATH = path.resolve(ROOT_DIR, 'scripts/cache/wiki-art.json');
 const YEARS_DIR = path.resolve(ROOT_DIR, 'src/content/years');
 
-const RATE_LIMIT_MS = 750;
+const RATE_LIMIT_MS = 250;
 const MAX_RETRIES = 4;
 const RETRY_BASE_DELAY = 400;
-const SEARCH_RESULTS_LIMIT = 5;
 
 const normalize = (value: string) => value.trim().toLowerCase().replace(/\s+/g, ' ');
 
@@ -97,10 +110,10 @@ const ensureDir = async (target: string) => {
   await fs.mkdir(target, { recursive: true });
 };
 
-const readJsonCache = async (): Promise<WikiArtCache> => {
+const readJsonCache = async (): Promise<AlbumArtCache> => {
   try {
     const raw = await fs.readFile(CACHE_PATH, 'utf8');
-    return JSON.parse(raw) as WikiArtCache;
+    return JSON.parse(raw) as AlbumArtCache;
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
       return {
@@ -110,14 +123,14 @@ const readJsonCache = async (): Promise<WikiArtCache> => {
           lastValidationRun: null,
         },
         entries: {},
-      } satisfies WikiArtCache;
+      } satisfies AlbumArtCache;
     }
 
     throw error;
   }
 };
 
-const writeJsonCache = async (cache: WikiArtCache) => {
+const writeJsonCache = async (cache: AlbumArtCache) => {
   const serialized = `${JSON.stringify(cache, null, 2)}\n`;
   await fs.writeFile(CACHE_PATH, serialized, 'utf8');
 };
@@ -203,155 +216,105 @@ const withRetries = async <T>(operation: () => Promise<T>): Promise<T> => {
   throw lastError;
 };
 
-const callWikimedia = async <T = unknown>(params: Record<string, string>): Promise<T> => {
-  const searchParams = new URLSearchParams({
-    format: 'json',
-    origin: '*',
-    redirects: '1',
-    ...params,
-  });
-  const url = `https://en.wikipedia.org/w/api.php?${searchParams.toString()}`;
-  await rateLimiter();
-  const response = await withRetries(async () => {
-    const res = await fetch(url, {
-      headers: { 'User-Agent': 'Billboard-Hot-100-Art-Fetcher/1.0' },
-    });
-    if (!res.ok) {
-      throw new Error(`Wikimedia request failed: ${res.status} ${res.statusText}`);
-    }
-    return res.json();
-  });
-  return response as T;
+const ensureEnv = (name: string) => {
+  const value = process.env[name];
+  if (!value) {
+    throw new Error(`Missing required ${name} environment variable.`);
+  }
+  return value;
 };
 
-const pickImageFromPage = async (
-  page: WikimediaPage
-): Promise<{ imageUrl: string; pageUrl?: string } | null> => {
-  if (page?.original?.source) {
-    return {
-      imageUrl: page.original.source as string,
-      pageUrl: page.fullurl as string | undefined,
-    };
-  }
+const createSpotifyTokenManager = () => {
+  const clientId = ensureEnv('SPOTIFY_CLIENT_ID');
+  const clientSecret = ensureEnv('SPOTIFY_CLIENT_SECRET');
 
-  if (!page?.pageid) return null;
+  let accessToken: string | null = null;
+  let expiresAt = 0;
 
-  const imageQuery = await callWikimedia<WikimediaQueryResponse<WikimediaPage>>({
-    action: 'query',
-    prop: 'images',
-    pageids: String(page.pageid),
-  });
+  const requestToken = async () => {
+    const auth = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
+    const response = await fetch('https://accounts.spotify.com/api/token', {
+      method: 'POST',
+      headers: {
+        Authorization: `Basic ${auth}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({ grant_type: 'client_credentials' }),
+    });
 
-  const pageKey = String(page.pageid);
-  const images = imageQuery.query?.pages?.[pageKey]?.images;
-  if (!images?.length) return null;
+    if (!response.ok) {
+      const body = await response.text();
+      throw new Error(
+        `Failed to obtain Spotify access token: ${response.status} ${response.statusText}${body ? ` – ${body}` : ''}`
+      );
+    }
 
-  const preference = (title: string) => {
-    const normalized = title.toLowerCase();
-    if (normalized.includes('cover')) return 0;
-    if (normalized.includes('album')) return 1;
-    if (normalized.includes('front')) return 2;
-    return 3;
+    const data = (await response.json()) as SpotifyTokenResponse;
+    accessToken = data.access_token;
+    const lifetimeSeconds = typeof data.expires_in === 'number' ? data.expires_in : 3600;
+    const safetyWindowSeconds = 60;
+    const effectiveLifetime = Math.max(lifetimeSeconds - safetyWindowSeconds, 60);
+    expiresAt = Date.now() + effectiveLifetime * 1000;
   };
 
-  const preferred = images
-    .map((img) => img.title)
-    .filter((title) => typeof title === 'string')
-    .sort((a, b) => preference(a) - preference(b));
-
-  for (const imageTitle of preferred) {
-    if (!imageTitle.startsWith('File:')) continue;
-    try {
-      const details = await callWikimedia<WikimediaQueryResponse<WikimediaImageInfoPage>>({
-        action: 'query',
-        prop: 'imageinfo',
-        titles: imageTitle,
-        iiprop: 'url|mime',
-        iiurlwidth: '1024',
-      });
-      const pageInfo = details.query?.pages;
-      if (!pageInfo) continue;
-      const fileInfo = Object.values(pageInfo)[0];
-      const info = Array.isArray(fileInfo?.imageinfo) ? fileInfo.imageinfo[0] : undefined;
-      if (info?.url) {
-        return { imageUrl: info.url as string, pageUrl: page.fullurl as string | undefined };
-      }
-    } catch (error) {
-      console.warn(`Failed to inspect image ${imageTitle}:`, error);
+  const getToken = async () => {
+    if (!accessToken || Date.now() >= expiresAt) {
+      await withRetries(requestToken);
     }
-  }
+    return accessToken!;
+  };
 
-  return null;
+  const invalidate = () => {
+    accessToken = null;
+    expiresAt = 0;
+  };
+
+  return { getToken, invalidate };
 };
 
-const findImageForTrack = async (
-  track: TrackSummary
-): Promise<{ imageUrl: string; pageUrl?: string } | null> => {
-  const baseQuery = `${track.title} ${track.artist}`;
-  const searchTerms = [
-    `${baseQuery} single cover art`,
-    `${baseQuery} album cover`,
-    `${baseQuery} cover art`,
-  ];
+const createSpotifyClient = () => {
+  const tokens = createSpotifyTokenManager();
 
-  for (const term of searchTerms) {
-    const result = await callWikimedia<WikimediaQueryResponse<WikimediaPage>>({
-      action: 'query',
-      prop: 'pageimages|info|pageprops',
-      generator: 'search',
-      gsrlimit: String(SEARCH_RESULTS_LIMIT),
-      gsrsearch: term,
-      piprop: 'original',
-      inprop: 'url',
-    });
+  const call = async <T>(path: string): Promise<T> => {
+    return withRetries(async () => {
+      for (let attempt = 0; attempt < 2; attempt += 1) {
+        const token = await tokens.getToken();
+        await rateLimiter();
+        const response = await fetch(`https://api.spotify.com/v1${path}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
 
-    const pages = result.query?.pages;
-    if (!pages) continue;
-
-    const candidates = Object.values(pages)
-      .filter((value): value is WikimediaPage => Boolean(value))
-      .sort((a, b) => (a.index ?? 0) - (b.index ?? 0));
-
-    for (const page of candidates) {
-      const picked = await pickImageFromPage(page);
-      if (picked) return picked;
-
-      const pageProps = page?.pageprops;
-      const albumTitle = pageProps?.disambiguation ? undefined : pageProps?.wikibase_item;
-      if (albumTitle) {
-        try {
-          const sitelinks = await callWikimedia<{
-            entities?: Record<string, { sitelinks?: { enwiki?: { title?: string } } }>;
-          }>({
-            action: 'wbgetentities',
-            format: 'json',
-            ids: albumTitle,
-            props: 'sitelinks',
-          });
-          const enwiki = sitelinks.entities?.[albumTitle]?.sitelinks?.enwiki?.title;
-          if (enwiki) {
-            const followUp = await callWikimedia<WikimediaQueryResponse<WikimediaPage>>({
-              action: 'query',
-              prop: 'pageimages|info',
-              titles: enwiki,
-              piprop: 'original',
-              inprop: 'url',
-            });
-            const followPages = followUp.query?.pages;
-            if (followPages) {
-              const followEntry = Object.values(followPages)[0];
-              const pickedFollow = await pickImageFromPage(followEntry);
-              if (pickedFollow) return pickedFollow;
-            }
-          }
-        } catch (error) {
-          console.warn(`Failed to follow album entity for ${track.title}:`, error);
+        if (response.status === 401 && attempt === 0) {
+          tokens.invalidate();
+          continue;
         }
-      }
-    }
-  }
 
-  return null;
+        if (!response.ok) {
+          const body = await response.text();
+          throw new Error(
+            `Spotify request failed: ${response.status} ${response.statusText}${body ? ` – ${body}` : ''}`
+          );
+        }
+
+        return (await response.json()) as T;
+      }
+
+      throw new Error('Spotify authentication failed after refresh attempt.');
+    });
+  };
+
+  const getTrack = async (trackId: string) =>
+    call<SpotifyTrackResponse>(`/tracks/${encodeURIComponent(trackId)}`);
+
+  return { getTrack };
+};
+
+const pickLargestImage = (images: SpotifyImage[] | undefined) => {
+  if (!images?.length) return null;
+  const sorted = [...images].sort((a, b) => (b.width ?? 0) - (a.width ?? 0));
+  const best = sorted.find((image) => typeof image.url === 'string');
+  if (!best?.url) return null;
+  return best as Required<Pick<SpotifyImage, 'url'>> & SpotifyImage;
 };
 
 const downloadImage = async (url: string, destination: string) => {
@@ -398,7 +361,7 @@ const parseArgs = () => {
   return { resume, skipExisting, limit };
 };
 
-const ensureEntry = (cache: WikiArtCache, track: TrackSummary) => {
+const ensureEntry = (cache: AlbumArtCache, track: TrackSummary) => {
   if (!cache.entries[track.slug]) {
     cache.entries[track.slug] = {
       title: track.title,
@@ -407,9 +370,14 @@ const ensureEntry = (cache: WikiArtCache, track: TrackSummary) => {
       source: track.source,
       year: track.year,
       status: 'pending',
-    } satisfies WikiArtEntry;
+      spotify: {},
+    } satisfies AlbumArtEntry;
   }
-  return cache.entries[track.slug];
+  const entry = cache.entries[track.slug];
+  if (!entry.spotify) {
+    entry.spotify = {};
+  }
+  return entry;
 };
 
 const main = async () => {
@@ -418,6 +386,7 @@ const main = async () => {
   const { resume, skipExisting, limit } = parseArgs();
   const cache = await readJsonCache();
   const tracks = await gatherTracks();
+  const spotify = createSpotifyClient();
 
   let processed = 0;
   for (const track of tracks) {
@@ -446,30 +415,68 @@ const main = async () => {
       continue;
     }
 
+    const spotifyTrackId = getSpotifyTrackId(track.title, track.artist);
+    if (!spotifyTrackId) {
+      entry.status = 'missing';
+      entry.error = 'No Spotify track ID found for this track';
+      entry.spotify = {
+        trackId: undefined,
+        trackName: undefined,
+        albumId: undefined,
+        albumName: undefined,
+        releaseDate: undefined,
+        releaseDatePrecision: undefined,
+        imageUrl: undefined,
+        imageWidth: undefined,
+        imageHeight: undefined,
+      };
+      entry.updatedAt = new Date().toISOString();
+      console.warn(`No Spotify track mapping found for ${track.title} — ${track.artist}`);
+      continue;
+    }
+
     try {
-      const result = await findImageForTrack(track);
-      if (!result) {
+      entry.spotify = { trackId: spotifyTrackId };
+
+      const trackData = await spotify.getTrack(spotifyTrackId);
+      const album = trackData.album;
+      const image = pickLargestImage(album?.images);
+
+      entry.spotify = {
+        trackId: spotifyTrackId,
+        trackName: trackData.name ?? undefined,
+        albumId: album?.id ?? undefined,
+        albumName: album?.name ?? undefined,
+        releaseDate: album?.release_date ?? undefined,
+        releaseDatePrecision: album?.release_date_precision ?? undefined,
+        imageUrl: image?.url ?? undefined,
+        imageWidth: image?.width ?? undefined,
+        imageHeight: image?.height ?? undefined,
+      };
+
+      if (!image?.url) {
         entry.status = 'missing';
-        entry.error = 'No image located via Wikimedia API';
+        entry.error = 'Spotify album is missing artwork';
+        entry.imageUrl = undefined;
         entry.updatedAt = new Date().toISOString();
-        console.warn(`No art found for ${track.title} — ${track.artist}`);
+        console.warn(`Spotify album lacks artwork for ${track.title} — ${track.artist}`);
         continue;
       }
 
-      const imageUrl = result.imageUrl;
+      const imageUrl = image.url;
       const extension = path.extname(new URL(imageUrl).pathname) || '.jpg';
       const fileName = `${track.slug}${extension}`;
       const destination = path.join(RAW_DIR, fileName);
       await downloadImage(imageUrl, destination);
 
-      const relativeRawPath = path.relative(ROOT_DIR, destination);
+      const relativeRawPath = path.relative(ROOT_DIR, destination).replace(/\\/g, '/');
+      const fetchedAt = new Date().toISOString();
 
       entry.status = 'ok';
       entry.imageUrl = imageUrl;
-      entry.wikiPage = result.pageUrl;
       entry.rawFile = relativeRawPath;
-      entry.lastFetched = new Date().toISOString();
-      entry.updatedAt = entry.lastFetched;
+      entry.lastFetched = fetchedAt;
+      entry.updatedAt = fetchedAt;
       delete entry.error;
       delete entry.note;
       processed += 1;
