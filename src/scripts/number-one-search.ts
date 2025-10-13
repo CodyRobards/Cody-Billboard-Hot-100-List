@@ -240,13 +240,21 @@
 
     // Optional: prefetch JSON after idle time for smoother future loads
     if (!sessionStorage.getItem('number-one-search-index')) {
-      requestIdleCallback(async () => {
+      const prefetch = async () => {
         try {
           await loadIndex();
         } catch {
           /* ignore */
         }
-      });
+      };
+
+      if ('requestIdleCallback' in window) {
+        (
+          window as Window & { requestIdleCallback: typeof requestIdleCallback }
+        ).requestIdleCallback(prefetch);
+      } else {
+        window.setTimeout(prefetch, 200);
+      }
     }
 
     const urlQuery = new URLSearchParams(window.location.search).get('q')?.trim() ?? '';
