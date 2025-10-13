@@ -7,6 +7,8 @@ import matter from 'gray-matter';
 
 import { getSpotifyTrackId, spotifyTracks } from '../src/data/spotify-tracks.js';
 
+import 'dotenv/config';
+
 type TrackSource = 'spotify' | 'number-one';
 
 interface TrackSummary {

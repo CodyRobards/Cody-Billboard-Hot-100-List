@@ -41,10 +41,10 @@ const main = async () => {
     const webpPath = path.join(OUTPUT_DIR, `${slug}.webp`);
     const avifPath = path.join(OUTPUT_DIR, `${slug}.avif`);
 
-    const image = sharp(sourcePath).resize(80, 80, { fit: 'cover' });
+    const image = sharp(sourcePath).resize(150, 150, { fit: 'cover' });
 
-    await image.clone().webp({ quality: 75 }).toFile(webpPath);
-    await image.clone().avif({ quality: 60 }).toFile(avifPath);
+    await image.clone().webp({ quality: 80 }).toFile(webpPath);
+    await image.clone().avif({ quality: 80 }).toFile(avifPath);
 
     const relativeWebp = path.relative(ROOT_DIR, webpPath).replace(/\\/g, '/');
     const relativeAvif = path.relative(ROOT_DIR, avifPath).replace(/\\/g, '/');

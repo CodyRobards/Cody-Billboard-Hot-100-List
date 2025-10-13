@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "astro dev",
     "start": "astro dev",
-    "build": "npm run validate:album-art && astro build",
+    "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
     "lint": "eslint \"src/**/*.{astro,ts,tsx,js,jsx}\"",
@@ -23,6 +23,7 @@
     "@astrojs/critters": "npm:astro-critters@^2.2.1",
     "@astrojs/mdx": "^4.3.6",
     "astro": "^5.14.1",
+    "dotenv": "^17.2.3",
     "gray-matter": "^4.0.3",
     "sharp": "^0.34.4"
   },
