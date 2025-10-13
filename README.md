@@ -12,8 +12,8 @@ performs well on mid-tier mobile devices as well as desktop browsers.
 - `public/images/covers/` – Generated 80×80 thumbnails for every album cover, produced by `npm run resize:album-art`.
 - `public/images/placeholder.webp` – Reusable fallback image used only when artwork has not been sourced yet.
 - `src/` – Application source code. Within `src/pages/` you will find the statically generated routes that surface chart data.
-- `raw-album-art/` – Raw album art downloads (one per track) fetched directly from Wikimedia prior to optimization.
-- `scripts/cache/` – Shared cache artifacts including `wiki-art.json` (fetch/resizing metadata) and the cover manifest.
+- `raw-album-art/` – Raw album art downloads (one per track) fetched directly from Spotify before optimization.
+- `scripts/cache/` – Shared cache artifacts including the Spotify metadata cache (`wiki-art.json`) and the cover manifest.
 - `.github/` – Issue templates, CODEOWNERS map, and CI workflows (`ci.yml`) that enforce linting and build checks on every push
   and pull request.
 - `.husky/` – Local Git hooks that run `lint-staged` to keep formatting and lint rules consistent before each commit.
@@ -48,14 +48,14 @@ performs well on mid-tier mobile devices as well as desktop browsers.
 - `npm run lint` / `npm run lint:fix` – Run ESLint across `src/**/*.{astro,ts,tsx,js,jsx}` with an option to auto-fix issues.
 - `npm run format` / `npm run format:fix` – Check or rewrite formatting with Prettier across Astro, TypeScript, JavaScript,
   JSON, and CSS files.
-- `npm run fetch:album-art` – Use the Wikimedia API (via `tsx`) to populate `raw-album-art/` and the persistent `wiki-art.json` cache.
+- `npm run fetch:album-art` – Use the Spotify Web API (via `tsx`) to populate `raw-album-art/` and the persistent `wiki-art.json` cache.
 - `npm run resize:album-art` – Generate 80×80 WebP and AVIF thumbnails with Sharp and refresh the slug → asset manifest.
 - `npm run validate:album-art` – Ensure every Spotify/MDX track has optimized artwork (no placeholders) before builds succeed.
 
 ### Album Art Workflow & Refresh Guidance
-Album art is sourced from Wikimedia and cached locally to avoid repeated requests. To fully refresh assets:
+Album art is sourced from Spotify and cached locally to avoid repeated requests. Before fetching make sure the Spotify client credentials are available in your environment (`SPOTIFY_CLIENT_ID` / `SPOTIFY_CLIENT_SECRET`). To fully refresh assets:
 
-1. Fetch raw images (respecting Wikimedia's rate limits of roughly one request every 750ms):
+1. Fetch raw images (the script throttles requests to roughly four per second to respect Spotify's rate limits):
    ```bash
    npm run fetch:album-art -- [--resume] [--limit <count>] [--skip-existing]
    ```
@@ -71,8 +71,7 @@ Album art is sourced from Wikimedia and cached locally to avoid repeated request
    npm run validate:album-art
    ```
 
-`scripts/cache/wiki-art.json` records the canonical state for each track—source metadata, last fetched/resized/validated timestamps,
-and optimized paths—while `scripts/cache/cover-manifest.json` exposes a machine-readable slug → thumbnail mapping for other tooling.
+`scripts/cache/wiki-art.json` (legacy name) records the canonical state for each track—Spotify IDs, album metadata, last fetched/resized/validated timestamps, and optimized paths—while `scripts/cache/cover-manifest.json` exposes a machine-readable slug → thumbnail mapping for other tooling.
 Run the workflow whenever new tracks are introduced or when artwork needs a manual refresh.
 
 ## Linting, Formatting, and Pre-commit Tooling

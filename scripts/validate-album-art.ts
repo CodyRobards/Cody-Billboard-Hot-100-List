@@ -15,7 +15,19 @@ interface TrackSummary {
   year?: number;
 }
 
-interface WikiArtEntry {
+interface SpotifyArtMetadata {
+  trackId?: string;
+  trackName?: string;
+  albumId?: string;
+  albumName?: string;
+  releaseDate?: string;
+  releaseDatePrecision?: string;
+  imageUrl?: string;
+  imageWidth?: number;
+  imageHeight?: number;
+}
+
+interface AlbumArtEntry {
   title: string;
   artist: string;
   slug: string;
@@ -23,8 +35,6 @@ interface WikiArtEntry {
   year?: number;
   status: 'pending' | 'ok' | 'missing' | 'skipped';
   note?: string;
-  wikiPage?: string;
-  imageUrl?: string;
   rawFile?: string;
   optimized?: {
     webp?: string;
@@ -35,15 +45,17 @@ interface WikiArtEntry {
   lastValidated?: string;
   updatedAt?: string;
   error?: string;
+  imageUrl?: string;
+  spotify?: SpotifyArtMetadata;
 }
 
-interface WikiArtCache {
+interface AlbumArtCache {
   meta: {
     lastFetchRun: string | null;
     lastResizeRun: string | null;
     lastValidationRun: string | null;
   };
-  entries: Record<string, WikiArtEntry>;
+  entries: Record<string, AlbumArtEntry>;
 }
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -62,12 +74,12 @@ const slugify = (title: string, artist: string) =>
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/(^-|-$)/g, '');
 
-const readJsonCache = async (): Promise<WikiArtCache> => {
+const readJsonCache = async (): Promise<AlbumArtCache> => {
   const raw = await fs.readFile(CACHE_PATH, 'utf8');
-  return JSON.parse(raw) as WikiArtCache;
+  return JSON.parse(raw) as AlbumArtCache;
 };
 
-const writeJsonCache = async (cache: WikiArtCache) => {
+const writeJsonCache = async (cache: AlbumArtCache) => {
   const serialized = `${JSON.stringify(cache, null, 2)}\n`;
   await fs.writeFile(CACHE_PATH, serialized, 'utf8');
 };
@@ -135,13 +147,13 @@ const fileExists = async (filePath: string) => {
 
 const validateEntry = async (
   track: TrackSummary,
-  cache: WikiArtCache,
+  cache: AlbumArtCache,
   issues: string[],
   now: string
 ) => {
   const entry = cache.entries[track.slug];
   if (!entry) {
-    issues.push(`Missing wiki-art cache entry for ${track.title} — ${track.artist}`);
+    issues.push(`Missing album-art cache entry for ${track.title} — ${track.artist}`);
     return;
   }
 
@@ -183,6 +195,16 @@ const validateEntry = async (
     issues.push(`Cache entry missing lastFetched timestamp for ${track.title} — ${track.artist}`);
   }
 
+  if (entry.status === 'ok') {
+    if (!entry.spotify?.trackId) {
+      issues.push(`Missing Spotify track metadata for ${track.title} — ${track.artist}`);
+    }
+
+    if (!entry.spotify?.imageUrl) {
+      issues.push(`Missing Spotify image URL for ${track.title} — ${track.artist}`);
+    }
+  }
+
   entry.lastValidated = now;
   entry.updatedAt = now;
 };
@@ -202,6 +224,7 @@ const main = async () => {
         source: track.source,
         year: track.year,
         status: 'pending',
+        spotify: {},
       };
     }
 
