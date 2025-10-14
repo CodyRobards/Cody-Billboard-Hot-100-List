@@ -31,29 +31,5 @@ echo "🏗️  Building project..."
 npm run build
 echo "✅ Build complete"
 
-# --- STEP 5: Start dev server in background ---
-echo "🚀 Starting Astro dev server..."
-npm run dev &
-DEV_PID=$!
+echo "✨ All done!"
 
-# --- STEP 6: Wait a few seconds for startup ---
-sleep 4
-
-# --- STEP 7: Open in Windows Firefox ---
-echo "🌐 Opening $URL in Windows Firefox..."
-
-# Common install paths for Windows Firefox
-WIN_FIREFOX_PATH_1="/mnt/c/Program Files/Mozilla Firefox/firefox.exe"
-WIN_FIREFOX_PATH_2="/mnt/c/Program Files (x86)/Mozilla Firefox/firefox.exe"
-
-if [ -f "$WIN_FIREFOX_PATH_1" ]; then
-  "$WIN_FIREFOX_PATH_1" "$URL" >/dev/null 2>&1 &
-elif [ -f "$WIN_FIREFOX_PATH_2" ]; then
-  "$WIN_FIREFOX_PATH_2" "$URL" >/dev/null 2>&1 &
-else
-  # fallback: open via cmd.exe (uses Windows default browser)
-  /mnt/c/Windows/System32/cmd.exe /c start "$URL"
-fi
-
-echo "✨ All done! Astro should now be live at $URL"
-echo "🧰 (To stop it, press Ctrl+C or kill PID $DEV_PID)"

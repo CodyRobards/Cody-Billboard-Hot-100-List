@@ -1,4 +1,7 @@
 import coverManifest from '../../scripts/cache/cover-manifest.json';
+import { generateAlbumArtSlug as createAlbumArtSlug } from './album-art-slug.js';
+
+export { generateAlbumArtSlug } from './album-art-slug.js';
 
 export interface AlbumArtSource {
   webp: string;
@@ -21,27 +24,6 @@ const normalizeManifestPath = (path: string): string => {
   return path.startsWith('public/') ? `/${path.slice(7)}` : path;
 };
 
-const toSlugFragment = (value: string): string =>
-  value
-    .normalize('NFKD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[\u2019']/g, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-
-export const generateAlbumArtSlug = (title: string, artist: string): string | null => {
-  const normalizedTitle = title?.trim() ?? '';
-  const normalizedArtist = artist?.trim() ?? '';
-  const combined = [normalizedTitle, normalizedArtist].filter(Boolean).join(' ');
-  if (!combined) {
-    return null;
-  }
-
-  const slug = toSlugFragment(combined);
-  return slug || null;
-};
-
 const buildAltText = (title: string, artist: string): string => {
   const normalizedTitle = title?.trim();
   const normalizedArtist = artist?.trim();
@@ -57,7 +39,7 @@ const buildAltText = (title: string, artist: string): string => {
 };
 
 export const getAlbumArt = (title: string, artist: string): AlbumArtSource => {
-  const slug = generateAlbumArtSlug(title, artist);
+  const slug = createAlbumArtSlug(title, artist);
   if (slug) {
     const entry = manifest[slug];
     if (entry) {

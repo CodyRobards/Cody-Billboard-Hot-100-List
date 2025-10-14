@@ -6,6 +6,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 import matter from 'gray-matter';
 
 import { getSpotifyTrackId, spotifyTracks } from '../src/data/spotify-tracks.js';
+import { generateAlbumArtSlugStrict } from '../src/lib/album-art-slug.js';
 
 import 'dotenv/config';
 
@@ -99,12 +100,7 @@ const RETRY_BASE_DELAY = 400;
 
 const normalize = (value: string) => value.trim().toLowerCase().replace(/\s+/g, ' ');
 
-const slugify = (title: string, artist: string) =>
-  `${title} ${artist}`
-    .toLowerCase()
-    .normalize('NFKD')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)/g, '');
+const slugify = (title: string, artist: string) => generateAlbumArtSlugStrict(title, artist);
 
 const createKey = (title: string, artist: string) => `${normalize(title)}::${normalize(artist)}`;
 
