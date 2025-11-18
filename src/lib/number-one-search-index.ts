@@ -29,6 +29,10 @@ export interface NumberOneSearchRecord {
   tokens: string[];
 }
 
+// Import cover manifest statically (for search indexing album art)
+import coverManifest from '../../scripts/cache/cover-manifest.json';
+interface CoverManifestEntry { webp?: string; avif?: string; }
+const manifest = coverManifest as Record<string, CoverManifestEntry>;
 const normalize = (value: string) =>
   value
     .normalize('NFD')
@@ -124,10 +128,8 @@ export async function loadNumberOneSearchIndex(): Promise<NumberOneSearchRecord[
       } else {
         const sanitizedKey = key.replace(/^-+|-+$/g, '');
         const idBase = sanitizedKey || `${year}-${index + 1}`;
-        // Attempt to derive cover art from the slug -> cover manifest (uses same normalization as cover-manifest keys).
-        const coverKey = sanitizedKey;
-        const coverManifest = await import('../scripts/cache/cover-manifest.json').then(m => m.default ?? m);
-        const coverEntry = coverManifest[coverKey];
+        // Reuse album-art manifest import (static import keeps code synchronous)
+        const coverEntry = manifest[sanitizedKey];
         grouped.set(key, {
           id: `track-${idBase}`,
           title: track.title,
