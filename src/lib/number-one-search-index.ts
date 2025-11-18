@@ -23,6 +23,8 @@ export interface NumberOneSearchRecord {
   notes: string[];
   appearances: NumberOneSearchRecordAppearance[];
   spotifyTrackId?: string;
+  coverWebp?: string;
+  coverAvif?: string;
   /** Normalized search tokens used by the client-side search script. */
   tokens: string[];
 }
@@ -122,6 +124,10 @@ export async function loadNumberOneSearchIndex(): Promise<NumberOneSearchRecord[
       } else {
         const sanitizedKey = key.replace(/^-+|-+$/g, '');
         const idBase = sanitizedKey || `${year}-${index + 1}`;
+        // Attempt to derive cover art from the slug -> cover manifest (uses same normalization as cover-manifest keys).
+        const coverKey = sanitizedKey;
+        const coverManifest = await import('../scripts/cache/cover-manifest.json').then(m => m.default ?? m);
+        const coverEntry = coverManifest[coverKey];
         grouped.set(key, {
           id: `track-${idBase}`,
           title: track.title,
@@ -129,6 +135,8 @@ export async function loadNumberOneSearchIndex(): Promise<NumberOneSearchRecord[
           notes: [...(track.notes ?? [])],
           appearances: [appearance],
           spotifyTrackId,
+          coverWebp: coverEntry?.webp?.replace(/^public\//, '/') ?? undefined,
+          coverAvif: coverEntry?.avif?.replace(/^public\//, '/') ?? undefined,
           tokens: [],
         });
       }
